@@ -10,14 +10,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### 🔮 Planned
-- Per-category budgets with progress bars in the summary
 - Recurring expenses (auto-add monthly rent, subscriptions, etc.)
 - Multi-currency support with conversion rates
 - Interactive REPL mode (`expense shell`)
-- FastAPI web interface (uses the same repositories)
 - JSON import/export
+- Telegram / Discord bot integration
 - GitHub Actions CI pipeline
 - Publish to PyPI (`pip install expense-tracker`)
+- Pre-commit hooks (black, ruff, mypy)
+- Tag system (many-to-many)
+
+---
+
+## [0.2.0] - 2026-06-30 🌐
+
+**Web interface & per-category budgets.** A full Flask + vanilla-JS SPA on top of the existing repositories, plus first-class per-category budgets throughout the CLI, API, and web UI.
+
+### ✨ Added
+
+#### 🌐 Web Interface (`py -m expense_tracker.web`)
+- **Flask REST API** in `web.py` — wraps existing repositories, no duplicated SQL
+- **Single-page application** with vanilla JS, Chart.js, and a hand-crafted CSS design system
+- **Dashboard** — total spent, budget remaining with progress bar, top category, recent expenses
+- **Expenses view** — full CRUD with date/category filters, modal forms for add/edit
+- **Categories view** — colored category cards, add/delete with HTML5 color picker
+- **Reports view** — interactive bar + doughnut charts (Chart.js) plus a category breakdown table
+- **Budget view** — manage overall *and* per-category budgets with per-category progress bars
+- **CSV download** button in the sidebar (`GET /api/export.csv`)
+- **Responsive layout** — sidebar collapses on narrow screens
+- **Toast notifications** for success/error feedback
+- **Modal forms** with client-side + server-side validation
+- **Hash-based routing** — `#dashboard`, `#expenses`, `#categories`, `#reports`, `#budget`
+
+#### 🎯 Per-Category Budgets
+- **`BudgetRepository.list_budgets_for_month()`** — returns overall + per-category budgets for a month
+- **`BudgetRepository.delete_budget()`** — remove an overall or per-category budget
+- **`MonthlyReport.category_budgets`** — new dict of per-category budget info
+- **`CategoryTotal.category_id`** — exposed so the UI can match spending to its budget
+- **API endpoints**
+  - `GET /api/budgets?month=YYYY-MM` — list every budget for a month
+  - `DELETE /api/budget?month=…&category_id=…` — remove a specific budget
+  - `GET /api/budget` now accepts `?category_id=N` for a single category
+  - `PUT /api/budget` accepts `category_id` in the body (`null` = overall)
+- **Web UI** — Budget view adds a **Type** dropdown to switch between *Overall* and *Per-category*, preloads the current amount when switching, and renders a separate progress bar per category
+- **Reports table** — automatically grows **Budget** + **Remaining** columns when per-category budgets exist
+- **Dashboard** — shows "*+ N category budgets*" hint in the budget card
+- **CLI** — `budget AMOUNT -c NAME` sets a per-category budget
+
+### 🔧 Changed
+
+- `MonthlyReport` gained a new field `category_budgets` (defaults to `{}` — backwards compatible)
+- `CategoryTotal` gained a new optional field `category_id`
+- `GET /api/budget` response now includes `category_id`
+- `GET /api/reports/summary` now returns `category_budgets`, and each entry in `by_category` includes `category_id`, `budget`, and `budget_remaining`
+- CLI `summary` output unchanged (no breaking changes)
+
+### 📚 Documentation
+
+- New "🌐 Web Interface" section in the README with install, screenshots, and feature tour
+- Updated project structure diagram to include `web.py`, `templates/`, `static/`
+- Updated roadmap — checked off **Per-category budgets** and **Web interface**
+
+### ⚙️ Dependencies
+
+| Package | Version | Purpose |
+|---|---|---|
+| `flask` | `>=3.0` | Web server & REST API (new) |
+
+All other dependencies unchanged.
 
 ---
 
@@ -120,6 +180,7 @@ _None — first release._
 
 | Version | Date | Highlights |
 |---|---|---|
+| `0.2.0` | 2026-06-30 | 🌐 Web interface (Flask + Chart.js) and per-category budgets throughout the stack |
 | `0.1.0` | 2026-06-29 | 🎉 Initial release — full CLI with CRUD, budgets, charts, CSV export, tests |
 
 ---
@@ -153,5 +214,6 @@ Until we hit `1.0.0`, anything may change at any time.
 - 🐛 [Issue Tracker](https://github.com/ItsWanheda/expense-tracker/issues)
 - 📦 [PyPI Package](https://pypi.org/project/expense-tracker/) _(coming soon)_
 
-[Unreleased]: https://github.com/ItsWanheda/expense-tracker/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ItsWanheda/expense-tracker/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ItsWanheda/expense-tracker/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ItsWanheda/expense-tracker/releases/tag/v0.1.0

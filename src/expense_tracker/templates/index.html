@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Tracker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">💰</span>
+        <h1>Expense Tracker</h1>
+      </div>
+      <nav class="nav">
+        <a href="#dashboard" class="nav-link active" data-view="dashboard">📊 Dashboard</a>
+        <a href="#expenses"  class="nav-link" data-view="expenses">📋 Expenses</a>
+        <a href="#categories" class="nav-link" data-view="categories">🏷️ Categories</a>
+        <a href="#reports"   class="nav-link" data-view="reports">📈 Reports</a>
+        <a href="#budget"    class="nav-link" data-view="budget">🎯 Budget</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/api/export.csv" class="btn btn-ghost btn-sm">⬇️ Export CSV</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <h2 id="page-title">Dashboard</h2>
+        <span id="today-date" class="muted"></span>
+      </header>
+
+      <section id="view-dashboard" class="view active"></section>
+      <section id="view-expenses"  class="view"></section>
+      <section id="view-categories" class="view"></section>
+      <section id="view-reports"   class="view"></section>
+      <section id="view-budget"    class="view"></section>
+    </main>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-container"></div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

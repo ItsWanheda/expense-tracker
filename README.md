@@ -1,22 +1,24 @@
 <div align="center">
 
-# 💰 Expense Tracker CLI
+# 💰 Expense Tracker
 
-**A clean, well-architected command-line tool to track your personal expenses, manage categories, set budgets, and visualize spending — all backed by a local SQLite database.**
+**Track your personal expenses from the terminal or the browser — a clean Python project with a CLI, a Flask web UI, local SQLite storage, monthly summaries, charts, CSV export, and per-category budgets.**
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-6%20passing-brightgreen.svg)](#-running-tests)
-[![Code style](https://img.shields.io/badge/code%20style-clean-black.svg)](#-project-structure)
 [![Built with Click](https://img.shields.io/badge/CLI-Click-9cf.svg)](https://click.palletsprojects.com/)
+[![Built with Flask](https://img.shields.io/badge/web-Flask-000.svg)](https://flask.palletsprojects.com/)
 
-[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-architecture) • [Roadmap](#-roadmap)
+[Features](#-features) • [Installation](#-installation) • [CLI Usage](#-cli-usage) • [Web Interface](#-web-interface) • [Architecture](#-architecture) • [Roadmap](#-roadmap)
 
 </div>
 
 ---
 
 ## 📸 Preview
+
+### CLI — Monthly summary
 
 ```
 ─────────────────────── Summary — 2026-06 ───────────────────────
@@ -34,20 +36,50 @@
  └────────────────┴───────┴─────────┴──────┘
 ```
 
+### Web — Dashboard, reports & per-category budgets
+
+```
+┌──────────────────┬────────────────────────┬─────────────────┐
+│ Total — 2026-06  │ Budget remaining       │ Top category    │
+│     2,687.49     │         312.51         │ Housing         │
+│  5 expenses      │ ▓▓▓▓▓▓▓▓▓▓░░░░ 89%    │    2,500.00     │
+└──────────────────┴────────────────────────┴─────────────────┘
+
+Per-category budgets
+┌────────────┬─────────┬─────────┬──────────┬────────────────────┐
+│ Category   │ Budget  │ Spent   │ Remaining│ Usage              │
+├────────────┼─────────┼─────────┼──────────┼────────────────────┤
+│ 🍔 Food    │  300.00 │  132.50 │  167.50  │ ▓▓▓▓▓░░░░░  44%   │
+│ 🚗 Transp. │  150.00 │   45.00 │  105.00  │ ▓▓▓░░░░░░░  30%   │
+│ 🎬 Entert. │   50.00 │    9.99 │   40.01  │ ▓▓░░░░░░░░  20%   │
+└────────────┴─────────┴─────────┴──────────┴────────────────────┘
+```
+
 ---
 
 ## ✨ Features
 
+### Core
 - ➕ **Add / Edit / Delete** expenses with description, amount, date, and category
 - 🏷️ **Manage categories** — create custom ones with your own colors
 - 🔍 **Filter & search** by date range and category
+- 💵 **Set monthly budgets** — overall *or* per-category
 - 📊 **Monthly summary** with totals, counts, percentages, and budget tracking
-- 💵 **Set monthly budgets** with auto-calculated remaining amount
-- 📈 **Visualize** spending as a horizontal bar chart (PNG)
 - 📤 **Export to CSV** for spreadsheet analysis or backup
 - 🗄️ **Local SQLite** — no servers, no cloud, your data stays on your machine
-- 🧪 **Fully tested** with pytest (6 tests, all passing)
+
+### CLI
 - 🎨 **Beautiful terminal UI** powered by Rich
+- 📈 **Visualize** spending as a horizontal bar chart (PNG via matplotlib)
+- 🧪 **Fully tested** with pytest (6 tests, all passing)
+
+### 🌐 Web Interface (`0.2.0+`)
+- 🖥️ **Single-page application** — Dashboard, Expenses, Categories, Reports, Budget
+- 📊 **Interactive charts** powered by Chart.js (bar + doughnut)
+- 🎯 **Per-category budget management** with progress bars
+- 🪟 **Modal forms** with validation and toast notifications
+- 📱 **Responsive layout** — works on phone, tablet, desktop
+- 🔄 **Same SQLite database** — CLI and web share data seamlessly
 
 ---
 
@@ -58,12 +90,14 @@
 | Language         | Python 3.10+ (tested on 3.14)                         |
 | CLI framework    | [Click](https://click.palletsprojects.com/) 8.x       |
 | Terminal UI      | [Rich](https://rich.readthedocs.io/) 13.x             |
+| Web framework    | [Flask](https://flask.palletsprojects.com/) 3.x 🆕    |
+| Frontend         | Vanilla JS + [Chart.js](https://www.chartjs.org/) 4.x 🆕 |
 | Database         | SQLite (Python stdlib)                                |
-| Charts           | [Matplotlib](https://matplotlib.org/) 3.x             |
+| Charts (CLI)     | [Matplotlib](https://matplotlib.org/) 3.x             |
 | Testing          | [pytest](https://docs.pytest.org/) 7.x                |
 | Packaging        | `pyproject.toml` (PEP 621, modern standard)           |
 
-> 💡 **Zero runtime dependencies** outside the standard library except for Click, Rich, and Matplotlib — all installable with one command.
+> 💡 **Zero runtime dependencies** outside the standard library except for Click, Rich, Matplotlib, and Flask — all installable with one command.
 
 ---
 
@@ -75,17 +109,26 @@ expense-tracker/
 ├── pyproject.toml            # Project metadata & dependencies (PEP 621)
 ├── requirements.txt          # Pip-installable dependencies
 ├── README.md                 # You are here
+├── CHANGELOG.md              # Release history
 ├── .gitignore                # Ignore __pycache__, *.db, etc.
 │
 ├── src/
 │   └── expense_tracker/
 │       ├── __init__.py       # Package marker & version
 │       ├── __main__.py       # Enables: python -m expense_tracker
-│       ├── cli.py            # All Click commands (~250 lines)
+│       ├── cli.py            # All Click commands
 │       ├── database.py       # SQLite setup, schema, connection
 │       ├── models.py         # Dataclasses + repository classes
 │       ├── reports.py        # Monthly aggregation logic
-│       └── visualization.py  # Matplotlib charts
+│       ├── visualization.py  # Matplotlib charts
+│       ├── web.py            # 🆕 Flask app + JSON REST API
+│       │
+│       ├── templates/        # 🆕
+│       │   └── index.html    #    Single-page app shell
+│       │
+│       └── static/           # 🆕
+│           ├── css/style.css #    Design system
+│           └── js/app.js     #    SPA logic (routing, CRUD, charts)
 │
 └── tests/
     ├── conftest.py           # Shared pytest fixtures (in-memory DB)
@@ -116,7 +159,7 @@ cd expense-tracker
 **Windows (PowerShell):**
 ```powershell
 py -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.\.venvScripts\Activate.ps1
 ```
 
 **macOS / Linux:**
@@ -150,12 +193,12 @@ py -m expense_tracker --version
 
 Expected output:
 ```
-0.1.0
+0.2.0
 ```
 
 ---
 
-## 📖 Usage
+## 📖 CLI Usage
 
 ### Quick start — your first 5 minutes
 
@@ -184,7 +227,7 @@ py -m expense_tracker chart -o my-spending.png
 py -m expense_tracker export -o expenses.csv
 ```
 
-### All commands
+### All CLI commands
 
 | Command | Description |
 |---|---|
@@ -193,7 +236,7 @@ py -m expense_tracker export -o expenses.csv
 | `edit ID` | Edit an existing expense |
 | `delete ID` | Delete an expense by ID |
 | `summary [-m MONTH]` | Show monthly summary + budget status |
-| `budget AMOUNT [-m MONTH]` | Set a monthly budget |
+| `budget AMOUNT [-m MONTH] [-c CATEGORY]` | Set a monthly budget (overall or per-category) 🆕 |
 | `chart [-o FILE]` | Generate a PNG bar chart |
 | `export [-o FILE]` | Export to CSV |
 | `categories list` | List all categories |
@@ -271,6 +314,20 @@ Budget: 3000.00  Remaining: 312.51
 
 If you've exceeded your budget, `Remaining` will turn red automatically.
 
+### Budgets 🆕
+
+```bash
+# Overall monthly budget
+py -m expense_tracker budget 3000
+py -m expense_tracker budget 3000 -m 2024-05
+
+# Per-category budget 🆕
+py -m expense_tracker budget 300 -c Food
+py -m expense_tracker budget 50  -c Entertainment -m 2024-05
+```
+
+You can mix both — an overall budget caps total spending, while per-category budgets cap individual categories. They're evaluated independently.
+
 ### Charts
 
 ```bash
@@ -289,29 +346,110 @@ The CSV has columns: `id, date, category, amount, description`.
 
 ---
 
+## 🌐 Web Interface
+
+**New in `0.2.0`.** A complete single-page application that talks to the same SQLite database as the CLI — every entry you add in the browser shows up in the terminal and vice-versa.
+
+### Start the server
+
+```bash
+py -m expense_tracker.web
+```
+
+Then open **http://127.0.0.1:5000** in your browser.
+
+You can also use the Flask CLI:
+
+```bash
+export FLASK_APP=expense_tracker.web     # macOS / Linux
+$env:FLASK_APP = "expense_tracker.web"   # Windows PowerShell
+flask run --debug
+```
+
+### Pages
+
+| Page | What it does |
+|---|---|
+| 📊 **Dashboard** | Total spent this month, budget remaining with a progress bar, top category, and recent expenses |
+| 📋 **Expenses** | Full CRUD with date/category filters, modal forms for add/edit, inline delete confirmation |
+| 🏷️ **Categories** | Grid of colored category cards with add/delete and a color picker |
+| 📈 **Reports** | Interactive bar + doughnut charts (Chart.js) plus a category breakdown table with Budget & Remaining columns when applicable |
+| 🎯 **Budget** | Manage overall **and** per-category budgets in one place, with per-category progress bars and an active-budgets table with Edit/Delete |
+
+### API
+
+The web UI talks to a small JSON REST API. You can use it directly too:
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/categories` | List categories |
+| `POST` | `/api/categories` | Create category |
+| `DELETE` | `/api/categories/<id>` | Delete category |
+| `GET` | `/api/expenses` | List expenses (filters: `from`, `to`, `category_id`, `limit`) |
+| `POST` | `/api/expenses` | Create expense |
+| `PUT` | `/api/expenses/<id>` | Update expense (partial) |
+| `DELETE` | `/api/expenses/<id>` | Delete expense |
+| `GET` | `/api/reports/summary?month=YYYY-MM` | Monthly report (incl. `category_budgets`) |
+| `GET` | `/api/budget?month=…&category_id=…` | Get a single budget |
+| `GET` | `/api/budgets?month=YYYY-MM` | List all budgets for a month 🆕 |
+| `PUT` | `/api/budget` | Set/update a budget (`category_id` optional) 🆕 |
+| `DELETE` | `/api/budget?month=…&category_id=…` | Delete a budget 🆕 |
+| `GET` | `/api/export.csv` | Download CSV export |
+
+Example with curl:
+
+```bash
+# Add an expense via the API
+curl -X POST http://127.0.0.1:5000/api/expenses \
+     -H "Content-Type: application/json" \
+     -d '{"amount": 12.50, "description": "Lunch", "category_id": 1, "date": "2026-06-30"}'
+
+# Get this month's summary as JSON
+curl http://127.0.0.1:5000/api/reports/summary
+
+# Set a per-category budget
+curl -X PUT http://127.0.0.1:5000/api/budget \
+     -H "Content-Type: application/json" \
+     -d '{"month": "2026-06", "amount": 300, "category_id": 1}'
+```
+
+> 🛡️ For **development only**. Don't expose `app.run()` to the internet — use `gunicorn 'expense_tracker.web:create_app()'` behind a reverse proxy in production.
+
+---
+
 ## 🏛️ Architecture
 
-This project follows a **3-layer architecture** that separates concerns cleanly:
+This project follows a **layered architecture** that separates concerns cleanly:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  CLI Layer (cli.py)                                 │
-│  - Click commands, Rich tables, user prompts        │
-└────────────────────┬────────────────────────────────┘
-                     │ calls
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│  Repository Layer (models.py)                       │
-│  - Static methods per entity (CRUD + queries)       │
-│  - Returns dataclasses, not raw rows                │
-└────────────────────┬────────────────────────────────┘
-                     │ uses
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│  Data Layer (database.py)                           │
-│  - SQLite connection management (context manager)   │
-│  - Schema definition & migrations                   │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  Presentation Layer                                         │
+│  ┌──────────────────────┐    ┌──────────────────────────┐   │
+│  │ cli.py (Click+Rich)  │    │ web.py (Flask + JS SPA)  │   │
+│  └──────────┬───────────┘    └──────────────┬───────────┘   │
+└─────────────┼───────────────────────────────┼───────────────┘
+              │                               │
+              └───────────────┬───────────────┘
+                              │ calls
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Repository Layer (models.py)                               │
+│  - Static methods per entity (CRUD + queries)               │
+│  - Returns dataclasses, not raw rows                        │
+│  - Shared by both the CLI and the web app                   │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ uses
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Data Layer (database.py)                                   │
+│  - SQLite connection management (context manager)           │
+│  - Schema definition & migrations                           │
+└─────────────────────────────────────────────────────────────┘
+
+Cross-cutting:
+  reports.py      → aggregation (used by CLI summary + web reports)
+  visualization.py → matplotlib charts (CLI only)
 ```
 
 ### Why this structure?
@@ -320,17 +458,18 @@ This project follows a **3-layer architecture** that separates concerns cleanly:
 |---|---|---|
 | **Data** | Manage the connection & schema | One place to change the database |
 | **Repository** | Translate Python ↔ SQL | Easy to swap SQLite for Postgres later |
-| **CLI** | Talk to the user | One place to change UX |
+| **Presentation** | Talk to the user (terminal or browser) | Multiple UIs share the same logic |
 
-Adding a **FastAPI web layer** later is trivial — it would just import the same repositories and return JSON instead of Rich tables.
+The **web layer** is just a thin Flask wrapper around the same repositories the CLI uses — zero duplicated SQL, zero duplicated business logic.
 
 ### Key design decisions
 
-- **Idempotent `initialize_database()`** — called on every CLI startup; safe to run repeatedly
+- **Idempotent `initialize_database()`** — called on every startup (CLI + web); safe to run repeatedly
 - **Idempotent `CategoryRepository.create()`** — returns existing ID if name is taken (no surprises)
 - **Python-level upserts** for `BudgetRepository` — avoids SQLite's NULL + UNIQUE pitfall
 - **Timezone-aware datetimes** — `datetime.now(timezone.utc)`, not deprecated `utcnow()`
 - **Context-managed DB connections** — auto-commit on success, auto-rollback on error
+- **Single DB, two UIs** — CLI and web read/write the same `~/.expense_tracker/expenses.db`
 
 ---
 
@@ -466,7 +605,7 @@ If there's an error, open the offending file in your editor and fix the indentat
 <details>
 <summary><b>❌ <code>OperationalError: no such table</code></b></summary>
 
-The CLI auto-initializes the database on startup. If you still see this, your `~/.expense_tracker/` directory may be locked or unreadable. Try:
+Both the CLI and the web app auto-initialize the database on startup. If you still see this, your `~/.expense_tracker/` directory may be locked or unreadable. Try:
 
 ```powershell
 # Delete and recreate
@@ -486,6 +625,20 @@ cat_id = CategoryRepository.create("Food")
 ```
 </details>
 
+<details>
+<summary><b>❌ Web UI won't load (404 on /static/…)</b></summary>
+
+Make sure you launched via the package, not a stray script:
+
+```bash
+# ✅ Correct
+py -m expense_tracker.web
+
+# ❌ Wrong (Flask can't find templates/static)
+cd src && py expense_tracker/web.py
+```
+</details>
+
 ---
 
 ## 🛠️ Development
@@ -495,15 +648,18 @@ cat_id = CategoryRepository.create("Food")
 1. Open `src/expense_tracker/cli.py`
 2. Add a new function decorated with `@cli.command()` (or `@<group>.command()`)
 3. Implement it using existing repositories — **don't add SQL here**
-4. Add a test in `tests/`
+4. (Optional) Add a matching API endpoint in `web.py`
+5. (Optional) Add a UI section in `static/js/app.js`
+6. Add a test in `tests/`
 
 ### Adding a new field
 
 1. Add the column to `SCHEMA` in `database.py`
 2. Add a migration note to handle existing databases
-3. Update the `Expense` dataclass in `models.py`
+3. Update the relevant dataclass in `models.py`
 4. Update repository methods that touch that field
-5. Add tests for the new behavior
+5. Update `reports.py` / `web.py` / `app.js` if the field is exposed to users
+6. Add tests for the new behavior
 
 ### Code style
 
@@ -511,22 +667,23 @@ cat_id = CategoryRepository.create("Food")
 - **Type hints** on all public functions
 - **Docstrings** for all public classes and functions
 - **Dataclasses** for value objects, not plain dicts
-- **No raw SQL in CLI code** — always go through a repository
+- **No raw SQL in CLI or web code** — always go through a repository
 
 ---
 
 ## 🗺️ Roadmap
 
 - [x] Core CRUD for expenses and categories
-- [x] Monthly summary & budget tracking
+- [x] Monthly summary & overall budget tracking
 - [x] CSV export
-- [x] Matplotlib charts
+- [x] Matplotlib charts (CLI)
 - [x] Pytest test suite
-- [ ] **Per-category budgets** (schema already supports it)
+- [x] **Per-category budgets** with progress bars ✅ (`0.2.0`)
+- [x] **Web interface** using the same repositories ✅ (`0.2.0`)
+- [x] **Interactive charts** (Chart.js in the web UI) ✅ (`0.2.0`)
 - [ ] **Recurring expenses** (rent, subscriptions)
 - [ ] **Multi-currency** support with conversion rates
 - [ ] **Interactive REPL mode** (`expense shell`)
-- [ ] **FastAPI web interface** using the same repositories
 - [ ] **JSON import / export**
 - [ ] **Telegram / Discord bot** integration
 - [ ] **GitHub Actions CI** (run tests on every push)
@@ -581,10 +738,16 @@ A: Not yet, but a CSV import command is on the roadmap. In the meantime, you can
 A: Click gives us nested subcommands (`categories add`), automatic `--help` for every level, and better ergonomics with about 60% less code than argparse.
 
 **Q: Can I extend this with a web UI?**
-A: Absolutely — that's the beauty of the repository pattern. A FastAPI layer would just import the same repositories and return JSON instead of Rich tables.
+A: You don't have to — there's already one in `0.2.0`! `py -m expense_tracker.web` starts the Flask server. If you want to add your own, the repository pattern makes it trivial: import the repos and return JSON.
+
+**Q: Can the CLI and web app be used at the same time?**
+A: Yes. SQLite supports concurrent reads from the same connection pool. Both UIs read/write the same `expenses.db`, so changes in one appear instantly in the other.
 
 **Q: Why no ORMs (SQLAlchemy, Tortoise)?**
 A: For a small project, raw SQL with the repository pattern is **simpler**, **faster**, and gives you **full control**. ORMs add abstraction layers that aren't justified at this scale.
+
+**Q: Why Flask and not FastAPI?**
+A: Flask's templating + static-file serving made the bundled SPA dead-simple to ship without a separate build step. The REST API uses plain JSON over HTTP, so a future migration to FastAPI is mostly mechanical if performance or async becomes important.
 
 ---
 
@@ -596,6 +759,6 @@ If this project helped you learn something or saved you time, give it a star on 
 
 **Made with ❤️ and lots of ☕**
 
-[⬆ Back to top](#-expense-tracker-cli)
+[⬆ Back to top](#-expense-tracker)
 
 </div>
