@@ -19,7 +19,7 @@
 ## 📸 Preview
 
 <p align="center">
-  <img src="../expense-tracker/src/images/Preview.png" />
+  <img src="./expense-tracker/src/images/Preview.png" />
 </p>
 
 ### CLI — Monthly summary
