@@ -1,20 +1,245 @@
+/* ===================================================================
+   NEW FEATURES — Dark mode, chips, heatmap, FAB, command palette
+   =================================================================== */
+
+/* ---------- Theme tokens ---------- */
 :root {
-  --bg: #f5f7fb;
-  --sidebar-bg: #1f2937;
-  --sidebar-fg: #cbd5e1;
-  --card-bg: #ffffff;
-  --border: #e5e7eb;
-  --text: #111827;
-  --muted: #6b7280;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --success: #10b981;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --radius: 12px;
-  --shadow: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.06);
-  --shadow-lg: 0 12px 32px rgba(0,0,0,.10), 0 4px 12px rgba(0,0,0,.04);
+  --heat-0: #ebedf0;
+  --heat-1: #9be9a8;
+  --heat-2: #40c463;
+  --heat-3: #30a14e;
+  --heat-4: #216e39;
 }
+body.theme-dark {
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --shadow: 0 1px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.3);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.3);
+  --heat-0: #161b22;
+  --heat-1: #0e4429;
+  --heat-2: #006d32;
+  --heat-3: #26a641;
+  --heat-4: #39d353;
+}
+body.theme-dark .topbar        { background: var(--card-bg); }
+body.theme-dark .table th      { background: #0f172a; }
+body.theme-dark .table tr:hover td { background: #0f172a; }
+body.theme-dark .btn           { background: var(--card-bg); color: var(--text); }
+body.theme-dark .btn:hover     { background: #0f172a; }
+body.theme-dark input,
+body.theme-dark select,
+body.theme-dark textarea       { background: #0f172a; color: var(--text); }
+body.theme-dark .modal         { background: var(--card-bg); color: var(--text); }
+body.theme-dark .category-pill { background: #334155; }
+body.theme-dark .progress      { background: #334155; }
+body.theme-dark .heatmap-grid .heat-cell { background: var(--heat-0); }
+
+/* ---------- Theme toggle button ---------- */
+.theme-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-left: auto;
+}
+.sidebar .theme-toggle:hover { background: rgba(255,255,255,.08); }
+
+/* ---------- Quick filter chips ---------- */
+.quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.quick-filters .spacer { flex: 1; min-width: 1px; }
+.chip {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+}
+.chip:hover    { background: var(--bg); }
+.chip.active   { background: var(--primary); color: white; border-color: var(--primary); }
+body.theme-dark .chip:hover { background: #334155; }
+
+/* ---------- Toast with action (Undo) ---------- */
+.toast { display: flex; align-items: center; gap: 12px; }
+.toast-action {
+  background: rgba(255,255,255,.18);
+  border: none;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.toast-action:hover { background: rgba(255,255,255,.3); }
+
+/* Move toast to top-right so it doesn't clash with FAB */
+#toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+}
+
+/* ---------- Floating Action Button ---------- */
+.fab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  z-index: 90;
+  transition: transform .15s, background .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fab:hover  { background: var(--primary-hover); transform: scale(1.08); }
+.fab:active { transform: scale(.95); }
+.fab::after {
+  content: 'Add expense (N)';
+  position: absolute;
+  right: 72px;
+  background: #1f2937;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s;
+}
+.fab:hover::after { opacity: 1; }
+
+/* ---------- Heatmap ---------- */
+.heatmap-wrap { padding: 12px 0 4px; overflow-x: auto; }
+.heat-month-row {
+  display: grid;
+  grid-template-columns: repeat(53, 14px);
+  grid-template-rows: 14px;
+  gap: 2px;
+  margin-left: 30px;
+  font-size: 10px;
+  color: var(--muted);
+  position: relative;
+}
+.heat-month-tick { white-space: nowrap; align-self: end; }
+.heatmap-body { display: flex; gap: 4px; }
+.heat-day-col {
+  display: grid;
+  grid-template-rows: repeat(7, 14px);
+  gap: 2px;
+  font-size: 10px;
+  color: var(--muted);
+  width: 26px;
+  flex-shrink: 0;
+}
+.heat-day-label { line-height: 14px; height: 14px; }
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(53, 14px);
+  grid-template-rows: repeat(7, 14px);
+  grid-auto-flow: column;
+  gap: 2px;
+}
+.heat-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--heat-0);
+  cursor: default;
+  transition: transform .1s;
+}
+.heat-cell:hover {
+  transform: scale(1.5);
+  outline: 1px solid var(--text);
+  z-index: 1;
+}
+.heat-cell.lvl-1 { background: var(--heat-1); }
+.heat-cell.lvl-2 { background: var(--heat-2); }
+.heat-cell.lvl-3 { background: var(--heat-3); }
+.heat-cell.lvl-4 { background: var(--heat-4); }
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  margin-left: 30px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.heat-legend .heat-cell { cursor: default; pointer-events: none; }
+.heat-legend .heat-cell:hover { transform: none; outline: none; }
+
+/* ---------- Command palette ---------- */
+.cmd-list {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 4px;
+}
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  transition: background .1s;
+}
+.cmd-item:last-child { border-bottom: none; }
+.cmd-item.selected   { background: var(--primary); color: white; }
+.cmd-item input      { display: none; }
+.cmd-icon { font-size: 16px; width: 20px; text-align: center; }
+.cmd-label { flex: 1; }
+.cmd-shortcut { font-size: 11px; opacity: .65; font-family: ui-monospace, monospace; }
+
+/* ---------- Shortcut help dialog ---------- */
+kbd {
+  display: inline-block;
+  padding: 2px 8px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  color: var(--text);
+  min-width: 60px;
+  text-align: center;
+}
+body.theme-dark kbd { background: #0f172a; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
