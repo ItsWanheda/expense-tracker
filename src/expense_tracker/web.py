@@ -56,6 +56,7 @@ def create_app() -> Flask:
             start_date=request.args.get("from"),
             end_date=request.args.get("to"),
             category_id=request.args.get("category_id", type=int),
+            q=request.args.get("q"),
             limit=request.args.get("limit", default=500, type=int),
         )
         return jsonify([e.to_dict() for e in expenses])
@@ -132,7 +133,27 @@ def create_app() -> Flask:
                 ],
             }
         )
+    # ---------- Heatmap ----------
+    @app.get("/api/reports/heatmap")
+    def report_heatmap():
+        """
+        Return all expenses for a given calendar year (for the dashboard heatmap).
+        """
 
+        year = int(request.args.get("year", date_cls.today().year))
+
+        expenses = ExpenseRepository.list(
+            start_date=f"{year}-01-01",
+            end_date=f"{year}-12-31",
+            limit=10_000,
+        )
+
+        return jsonify(
+            {
+                "year": year,
+                "expenses": [e.to_dict() for e in expenses],
+            }
+        )
     # ---------- Budget ----------
     @app.get("/api/budget")
     def get_budget():

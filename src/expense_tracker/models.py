@@ -1,11 +1,9 @@
 """Domain dataclasses and repository classes (data access layer)."""
 from __future__ import annotations
-
 import sqlite3
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Optional
-
 from .database import get_connection
 
 
@@ -115,8 +113,18 @@ class ExpenseRepository:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         category_id: Optional[int] = None,
+        q: Optional[str] = None,
         limit: int = 100,
     ) -> list[Expense]:
+        """List expenses with optional filters.
+
+        Args:
+            start_date: ISO date string (inclusive), e.g. '2026-01-01'
+            end_date:   ISO date string (inclusive), e.g. '2026-12-31'
+            category_id: filter by category
+            q: free-text search across description and category name
+            limit: max rows to return (default 100)
+        """
         query = ExpenseRepository._SELECT + " WHERE 1=1"
         params: list = []
         if start_date:
@@ -128,9 +136,12 @@ class ExpenseRepository:
         if category_id is not None:
             query += " AND e.category_id = ?"
             params.append(category_id)
+        if q:
+            query += " AND (e.description LIKE ? OR c.name LIKE ?)"
+            like = f"%{q}%"
+            params.extend([like, like])
         query += " ORDER BY e.date DESC, e.id DESC LIMIT ?"
         params.append(limit)
-
         with get_connection() as conn:
             rows = conn.execute(query, params).fetchall()
             return [Expense.from_row(r) for r in rows]
@@ -151,7 +162,6 @@ class BudgetRepository:
                     "SELECT id FROM budgets WHERE category_id = ? AND month = ?",
                     (category_id, month),
                 ).fetchone()
-
             if existing:
                 conn.execute(
                     "UPDATE budgets SET amount = ? WHERE id = ?",

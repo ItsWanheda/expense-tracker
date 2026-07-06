@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Expense Tracker</title>
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.documentElement.classList.add('theme-dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -13,6 +22,8 @@
       <div class="brand">
         <span class="logo">💰</span>
         <h1>Expense Tracker</h1>
+        <!-- theme toggle -->
+        <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
       </div>
       <nav class="nav">
         <a href="#dashboard" class="nav-link active" data-view="dashboard">📊 Dashboard</a>
@@ -42,6 +53,9 @@
 
   <div id="modal-root"></div>
   <div id="toast-container"></div>
+
+  <!-- NEW: Floating Action Button -->
+  <button class="fab" id="fab-add" title="Add expense (N)">+</button>
 
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
