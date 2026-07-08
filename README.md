@@ -1,18 +1,38 @@
 <div align="center">
 
-# 💰 Expense Tracker
+# 💸 Expense Tracker
 
-**Track your personal expenses from the terminal or the browser — a clean Python project with a CLI, a Flask web UI, local SQLite storage, monthly summaries, charts, CSV export, and per-category budgets.**
+### A modern expense management application built with Python, Flask, SQLite and Rich.
 
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-6%20passing-brightgreen.svg)](#-running-tests)
-[![Built with Click](https://img.shields.io/badge/CLI-Click-9cf.svg)](https://click.palletsprojects.com/)
-[![Built with Flask](https://img.shields.io/badge/web-Flask-000.svg)](https://flask.palletsprojects.com/)
+Track your spending from the **terminal** or through a **beautiful responsive web dashboard**.
 
-[Features](#-features) • [Installation](#-installation) • [CLI Usage](#-cli-usage) • [Web Interface](#-web-interface) • [Architecture](#-architecture) • [Roadmap](#-roadmap)
+<br>
+
+<img src="./src/images/Preview.png" width="900">
+
+<br>
+
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite)
+![License](https://img.shields.io/badge/License-MIT-success)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)
 
 </div>
+
+---
+
+## 📊 Project Overview
+
+| | |
+|---|---|
+| 🐍 Language | Python |
+| 🌐 Web Framework | Flask |
+| 💾 Database | SQLite |
+| 🖥 Interface | CLI + Web |
+| 📱 Responsive | ✅ |
+| 🧪 Tested | Pytest |
+| 📄 License | GPL-3.0 |
 
 ---
 
@@ -96,6 +116,7 @@ Per-category budgets
 | Terminal UI      | [Rich](https://rich.readthedocs.io/) 13.x             |
 | Web framework    | [Flask](https://flask.palletsprojects.com/) 3.x 🆕    |
 | Frontend         | Vanilla JS + [Chart.js](https://www.chartjs.org/) 4.x 🆕 |
+| Design system    | Custom CSS (light/dark tokens, fluid grid, no framework) |
 | Database         | SQLite (Python stdlib)                                |
 | Charts (CLI)     | [Matplotlib](https://matplotlib.org/) 3.x             |
 | Testing          | [pytest](https://docs.pytest.org/) 7.x                |
@@ -677,14 +698,19 @@ cd src && py expense_tracker/web.py
 
 ## 🗺️ Roadmap
 
-- [x] Core CRUD for expenses and categories
-- [x] Monthly summary & overall budget tracking
-- [x] CSV export
-- [x] Matplotlib charts (CLI)
-- [x] Pytest test suite
+Planned for future releases:
+- [x] **Core CRUD for expenses and categories**
+- [x] **Monthly summary & overall budget tracking**
+- [x] **CSV export**
+- [x] **Matplotlib charts (CLI)**
+- [x] **Pytest test suite**
 - [x] **Per-category budgets** with progress bars ✅ (`0.2.0`)
 - [x] **Web interface** using the same repositories ✅ (`0.2.0`)
 - [x] **Interactive charts** (Chart.js in the web UI) ✅ (`0.2.0`)
+- [x]   **Responsive design** — sidebar drawer + stacked layouts +       scrollable tables ✅ ( 0.3.0)
+- [x] **Light/dark theme** with **live chart recoloring** ✅ ( 0.3.0)
+- [x] **Command palette & keyboard shortcuts** ✅ ( 0.3.0)
+- [x] **Toast with Undo action** for accidental deletes ✅ ( 0.3.0)
 - [ ] **Recurring expenses** (rent, subscriptions)
 - [ ] **Multi-currency** support with conversion rates
 - [ ] **Interactive REPL mode** (`expense shell`)
@@ -694,6 +720,21 @@ cd src && py expense_tracker/web.py
 - [ ] **Publish to PyPI** (`pip install expense-tracker`)
 - [ ] **Tag system** (many-to-many)
 - [ ] **Pre-commit hooks** (black, ruff, mypy)
+- [ ] **User Authentication**
+- [ ] **Cloud Sync**
+- [ ] **Notifications**
+- [ ] **Multiple Wallets**
+- [ ] **Multi-Currency Support**
+- [ ] **Advanced Charts**
+- [ ] **AI Spending Insights**
+- [ ] **Progressive Web App (PWA)**
+- [ ] **Docker Support**
+- [ ] **PDF Report Export**
+- [ ] **Advanced Analytics**
+- [ ] **Localization & Multi-language**
+- [ ] **User Accounts & Profiles**
+- [ ] **Excel Export**
+- [ ] **PostgreSQL/MySQL Support**
 
 ---
 

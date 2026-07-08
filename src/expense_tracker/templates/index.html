@@ -13,7 +13,7 @@
       } catch (e) {}
     })();
   </script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="../static/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -39,6 +39,8 @@
 
     <main class="main">
       <header class="topbar">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
         <h2 id="page-title">Dashboard</h2>
         <span id="today-date" class="muted"></span>
       </header>
@@ -54,9 +56,9 @@
   <div id="modal-root"></div>
   <div id="toast-container"></div>
 
-  <!-- NEW: Floating Action Button -->
+  <!-- Floating Action Button -->
   <button class="fab" id="fab-add" title="Add expense (N)">+</button>
-
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

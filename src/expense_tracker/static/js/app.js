@@ -1,7 +1,5 @@
 // =========================================================================
-//  EXPENSE TRACKER — Hardened Frontend
-//  - All errors caught and surfaced in UI + console
-//  - Renderers never crash the page
+//  EXPENSE TRACKER — Hardened Frontend (v2: responsive + themed charts)
 // =========================================================================
 
 (function () {
@@ -43,8 +41,22 @@
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
   function safeOn(el, ev, fn) {
-    if (!el) { console.warn(`[safeOn] element not found`); return; }
+    if (!el) { console.warn(`[safeOn] element not found for ${ev}`); return; }
     el.addEventListener(ev, fn);
+  }
+
+  // Tiny deep-merge for Chart.js option trees
+  function mergeDeep(target, source) {
+    const out = JSON.parse(JSON.stringify(target || {}));
+    for (const key of Object.keys(source || {})) {
+      const sv = source[key];
+      if (sv && typeof sv === 'object' && !Array.isArray(sv)) {
+        out[key] = mergeDeep(out[key] || {}, sv);
+      } else {
+        out[key] = sv;
+      }
+    }
+    return out;
   }
 
   // -----------------------------------------------------------------------
@@ -64,7 +76,7 @@
     },
     categories: {
       list:   ()       => API.req('/api/categories'),
-      create: (data)   => API.req('/api/categories',     { method: 'POST',  body: JSON.stringify(data) }),
+      create: (data)   => API.req('/api/categories',       { method: 'POST',   body: JSON.stringify(data) }),
       remove: (id)     => API.req('/api/categories/' + id, { method: 'DELETE' }),
     },
     expenses: {
@@ -74,9 +86,9 @@
         ).toString();
         return API.req('/api/expenses' + (q ? '?' + q : ''));
       },
-      create: (data) => API.req('/api/expenses',         { method: 'POST',  body: JSON.stringify(data) }),
-      update: (id, d) => API.req('/api/expenses/' + id,  { method: 'PUT',   body: JSON.stringify(d) }),
-      remove: (id)    => API.req('/api/expenses/' + id,  { method: 'DELETE' }),
+      create: (data) => API.req('/api/expenses',        { method: 'POST', body: JSON.stringify(data) }),
+      update: (id, d) => API.req('/api/expenses/' + id, { method: 'PUT',  body: JSON.stringify(d) }),
+      remove: (id)    => API.req('/api/expenses/' + id, { method: 'DELETE' }),
     },
     reports: {
       summary: (month) => API.req('/api/reports/summary' + (month ? '?month=' + month : '')),
@@ -106,6 +118,116 @@
   }
 
   // -----------------------------------------------------------------------
+  //  Chart.js theme integration
+  // -----------------------------------------------------------------------
+  const chartInstances = {};
+
+  function chartTheme() {
+    const cs = getComputedStyle(document.body);
+    const pick = (v) => cs.getPropertyValue(v).trim();
+    return {
+      text:      pick('--chart-text'),
+      grid:      pick('--chart-grid'),
+      tooltipBg: pick('--chart-tooltip-bg'),
+      tooltipFg: pick('--chart-tooltip-text'),
+      legend:    pick('--chart-legend'),
+    };
+  }
+
+  function applyChartDefaults() {
+    if (typeof Chart === 'undefined') return;
+    const t = chartTheme();
+    Chart.defaults.color      = t.text;
+    Chart.defaults.borderColor = t.grid;
+    Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  }
+
+  function createChart(canvas, config) {
+    if (!canvas || typeof Chart === 'undefined') return null;
+
+    // Re-create safely: destroy any existing chart bound to this canvas
+    if (chartInstances[canvas.id]) {
+      try { chartInstances[canvas.id].destroy(); } catch (_) {}
+      delete chartInstances[canvas.id];
+    }
+
+    const t = chartTheme();
+    const themed = mergeDeep(config, {
+      options: {
+        plugins: {
+          legend:  { labels: { color: t.legend } },
+          tooltip: {
+            backgroundColor: t.tooltipBg,
+            titleColor:      t.tooltipFg,
+            bodyColor:       t.tooltipFg,
+            borderColor:     t.grid,
+            borderWidth:     1,
+          },
+        },
+        scales: config.options?.scales ? {
+          x: { ticks: { color: t.text }, grid: { color: t.grid } },
+          y: { ticks: { color: t.text }, grid: { color: t.grid } },
+        } : undefined,
+      },
+    });
+
+    const chart = new Chart(canvas, themed);
+    chartInstances[canvas.id] = chart;
+    return chart;
+  }
+
+  function updateChartsTheme() {
+    const t = chartTheme();
+    for (const chart of Object.values(chartInstances)) {
+      if (!chart || !chart.options) continue;
+      const o = chart.options;
+      if (o.plugins?.legend?.labels)  o.plugins.legend.labels.color = t.legend;
+      if (o.plugins?.tooltip) {
+        o.plugins.tooltip.backgroundColor = t.tooltipBg;
+        o.plugins.tooltip.titleColor      = t.tooltipFg;
+        o.plugins.tooltip.bodyColor       = t.tooltipFg;
+        o.plugins.tooltip.borderColor     = t.grid;
+      }
+      if (o.scales?.x) {
+        if (o.scales.x.ticks) o.scales.x.ticks.color = t.text;
+        if (o.scales.x.grid)  o.scales.x.grid.color  = t.grid;
+      }
+      if (o.scales?.y) {
+        if (o.scales.y.ticks) o.scales.y.ticks.color = t.text;
+        if (o.scales.y.grid)  o.scales.y.grid.color  = t.grid;
+      }
+      chart.update('none'); // no animation during theme switch
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  //  Mobile menu (drawer sidebar)
+  // -----------------------------------------------------------------------
+  (function initMobileMenu() {
+    const toggle  = $('#menu-toggle');
+    const sidebar = $('.sidebar');
+    const overlay = $('#sidebar-overlay');
+    if (!toggle || !sidebar) return;
+
+    const open  = () => {
+      sidebar.classList.add('open');
+      overlay?.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    };
+    const close = () => {
+      sidebar.classList.remove('open');
+      overlay?.classList.remove('show');
+      document.body.style.overflow = '';
+    };
+
+    safeOn(toggle,  'click', open);
+    safeOn(overlay, 'click', close);
+
+    // Expose so navigate() can close on view change
+    window.__closeSidebar = close;
+  })();
+
+  // -----------------------------------------------------------------------
   //  Theme (dark mode)
   // -----------------------------------------------------------------------
   (function initTheme() {
@@ -119,6 +241,8 @@
       document.documentElement.classList.toggle('theme-dark', next);
       btn.textContent = next ? '☀️' : '🌙';
       try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch (_) {}
+      applyChartDefaults();
+      updateChartsTheme();
     });
   })();
 
@@ -155,7 +279,7 @@
       <div class="modal-overlay">
         <form class="modal">
           <h3>${escHTML(title)}</h3>
-          <div class="modal-body">${body}</div>
+          <div class="modal-body">${body || ''}</div>
           <div class="modal-actions">
             <button type="button" class="btn" data-close>Cancel</button>
             <button type="submit" class="btn btn-primary">${escHTML(submitText)}</button>
@@ -164,9 +288,9 @@
       </div>`;
     const overlay = $('.modal-overlay', root);
     const form    = $('.modal', root);
-    const close = () => (root.innerHTML = '');
+    const close = () => { root.innerHTML = ''; document.body.focus(); };
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-    $('.modal [data-close]', root).addEventListener('click', close);
+    safeOn($('.modal [data-close]', root), 'click', close);
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(form).entries());
@@ -177,6 +301,11 @@
         toast(err.message || String(err), 'error');
       }
     });
+    // Focus first field for keyboard users
+    setTimeout(() => {
+      const first = form.querySelector('input, select, textarea, button');
+      if (first) first.focus();
+    }, 50);
   }
 
   // -----------------------------------------------------------------------
@@ -189,9 +318,6 @@
 
   function navigate(view) {
     if (!VIEWS.includes(view)) view = 'dashboard';
-    if (view === currentView && view === location.hash.slice(1)) {
-      // Already there, still re-render to refresh data
-    }
     currentView = view;
 
     VIEWS.forEach((v) => {
@@ -203,6 +329,17 @@
 
     const titleEl = $('#page-title');
     if (titleEl) titleEl.textContent = view.charAt(0).toUpperCase() + view.slice(1);
+
+    // Drop any chart whose canvas was removed from the DOM
+    Object.keys(chartInstances).forEach((id) => {
+      if (!document.getElementById(id)) {
+        try { chartInstances[id].destroy(); } catch (_) {}
+        delete chartInstances[id];
+      }
+    });
+
+    // Close mobile drawer on every navigation
+    window.__closeSidebar?.();
 
     // Run renderer safely
     const renderer = renderers[view];
@@ -217,7 +354,6 @@
       }
     }
 
-    // Only update hash if different (avoids hashchange loop)
     if (location.hash.slice(1) !== view) {
       history.replaceState(null, '', '#' + view);
     }
@@ -239,29 +375,31 @@
       return `<div class="empty"><div class="icon">📭</div>No expenses yet.</div>`;
     }
     return `
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Date</th><th>Category</th><th>Description</th>
-            <th class="numeric">Amount</th><th></th>
-          </tr>
-        </thead>
-        <tbody>
-          ${expenses.map((e) => `
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
             <tr>
-              <td>${escHTML(e.date)}</td>
-              <td>${e.category_name
-                ? `<span class="category-pill">${escHTML(e.category_name)}</span>`
-                : '<span class="muted">—</span>'}</td>
-              <td>${escHTML(e.description)}</td>
-              <td class="numeric"><strong>${fmt(e.amount)}</strong></td>
-              <td><div class="row-actions">
-                ${onEdit   ? '<button class="btn btn-sm act-edit">Edit</button>' : ''}
-                ${onDelete ? '<button class="btn btn-sm btn-danger act-del">Delete</button>' : ''}
-              </div></td>
-            </tr>`).join('')}
-        </tbody>
-      </table>`;
+              <th>Date</th><th>Category</th><th>Description</th>
+              <th class="numeric">Amount</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${expenses.map((e) => `
+              <tr>
+                <td>${escHTML(e.date)}</td>
+                <td>${e.category_name
+                  ? `<span class="category-pill">${escHTML(e.category_name)}</span>`
+                  : '<span class="muted">—</span>'}</td>
+                <td>${escHTML(e.description)}</td>
+                <td class="numeric"><strong>${fmt(e.amount)}</strong></td>
+                <td><div class="row-actions">
+                  ${onEdit   ? '<button class="btn btn-sm act-edit">Edit</button>' : ''}
+                  ${onDelete ? '<button class="btn btn-sm btn-danger act-del">Delete</button>' : ''}
+                </div></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
   }
 
   function bindTableActions(container, expenses, { onEdit, onDelete }) {
@@ -343,13 +481,15 @@
       const weeks = [];
       const cursor = new Date(firstMonday);
       let safety = 0;
-      while (safety++ < 60) {  // hard cap: 60 weeks max
+      while (safety++ < 60) {
         const week = [];
         for (let d = 0; d < 7; d++) {
           week.push(new Date(cursor));
           cursor.setDate(cursor.getDate() + 1);
         }
         weeks.push(week);
+        // BUGFIX: original `week > dec31` compared an Array to a Date (always false).
+        // Compare the LAST day of the week so we stop once we're past Dec 31.
         if (week > dec31) break;
       }
 
@@ -421,12 +561,13 @@
         const [summary, expenses, heatData] = await Promise.all([
           API.reports.summary(state.selectedMonth),
           API.expenses.list({ limit: 8 }),
-          API.reports.heatmap(curYear()).catch(() => ({ expenses: [] })),  // don't fail dashboard on heatmap error
+          API.reports.heatmap(curYear()).catch(() => ({ expenses: [] })),
         ]);
 
         const budgetPct = summary.budget ? (summary.total / summary.budget) * 100 : 0;
         const budgetCls = budgetPct > 100 ? 'over' : budgetPct > 80 ? 'warning' : '';
-        const top = summary.by_category && summary.by_category;
+        // BUGFIX: was `summary.by_category` (the array), not the top entry.
+        const top = Array.isArray(summary.by_category) && summary.by_category;
 
         const byDay = {};
         (heatData.expenses || []).forEach((e) => {
@@ -686,50 +827,71 @@
             content.innerHTML = '<p class="empty">No expenses this month.</p>';
             return;
           }
+          const rowsHTML = `
+            <div class="table-wrap"><table class="table">
+              <thead><tr>
+                <th>Category</th>
+                <th class="numeric">Count</th>
+                <th class="numeric">Total</th>
+                <th class="numeric">%</th>
+              </tr></thead>
+              <tbody>${r.by_category.map((c) => `
+                <tr>
+                  <td>${escHTML(c.category)}</td>
+                  <td class="numeric">${c.count}</td>
+                  <td class="numeric">${fmt(c.total)}</td>
+                  <td class="numeric">${r.total ? ((c.total / r.total) * 100).toFixed(1) : '0.0'}%</td>
+                </tr>`).join('')}
+              </tbody>
+            </table></div>`;
+
           content.innerHTML = `
             <div class="charts-grid">
               <div class="card">
                 <div class="card-title">Spending by category</div>
-                <canvas id="bar-chart"></canvas>
+                <div class="chart-host"><canvas id="bar-chart"></canvas></div>
               </div>
               <div class="card">
                 <div class="card-title">Distribution</div>
-                <canvas id="pie-chart"></canvas>
+                <div class="chart-host"><canvas id="pie-chart"></canvas></div>
               </div>
             </div>
             <div class="card" style="margin-top:20px">
               <div class="card-title">Category breakdown</div>
-              <table class="table">
-                <thead><tr>
-                  <th>Category</th>
-                  <th class="numeric">Count</th>
-                  <th class="numeric">Total</th>
-                  <th class="numeric">%</th>
-                </tr></thead>
-                <tbody>${r.by_category.map((c) => `
-                  <tr>
-                    <td>${escHTML(c.category)}</td>
-                    <td class="numeric">${c.count}</td>
-                    <td class="numeric">${fmt(c.total)}</td>
-                    <td class="numeric">${r.total ? ((c.total / r.total) * 100).toFixed(1) : '0.0'}%</td>
-                  </tr>`).join('')}
-                </tbody>
-              </table>
+              ${rowsHTML}
             </div>`;
 
           if (typeof Chart !== 'undefined') {
             const colors = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316'];
             const labels = r.by_category.map((c) => c.category);
             const values = r.by_category.map((c) => c.total);
-            new Chart($('#bar-chart'), {
+
+            createChart($('#bar-chart'), {
               type: 'bar',
-              data: { labels, datasets: [{ label: 'Amount', data: values, backgroundColor: colors }] },
-              options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } },
+              data: {
+                labels,
+                datasets: [{ label: 'Amount', data: values, backgroundColor: colors, borderRadius: 4 }],
+              },
+              options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+              },
             });
-            new Chart($('#pie-chart'), {
+
+            createChart($('#pie-chart'), {
               type: 'doughnut',
-              data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
-              options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
+              data: {
+                labels,
+                datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                cutout: '60%',
+              },
             });
           } else {
             console.warn('Chart.js not loaded');
@@ -903,7 +1065,7 @@
       submitText: 'Got it',
       onSubmit: () => {},
       body: `
-        <table class="table">
+        <div class="table-wrap"><table class="table">
           <tr><td><kbd>Ctrl/⌘ K</kbd></td><td>Open command palette</td></tr>
           <tr><td><kbd>N</kbd></td>        <td>New expense</td></tr>
           <tr><td><kbd>/</kbd></td>        <td>Focus search</td></tr>
@@ -914,7 +1076,7 @@
           <tr><td><kbd>G</kbd> then <kbd>B</kbd></td><td>Go to Budget</td></tr>
           <tr><td><kbd>Esc</kbd></td>      <td>Close modal</td></tr>
           <tr><td><kbd>?</kbd></td>        <td>Show this help</td></tr>
-        </table>`,
+        </table></div>`,
     });
   }
 
@@ -982,6 +1144,7 @@
   // -----------------------------------------------------------------------
   //  Boot
   // -----------------------------------------------------------------------
+  applyChartDefaults();
   refreshCategories()
     .catch((err) => console.error('[boot] refreshCategories', err))
     .finally(() => {
@@ -994,5 +1157,8 @@
     });
 
   // Expose for debugging in console
-  window.__app = { state, navigate, renderers, refreshCategories };
+  window.__app = {
+    state, navigate, renderers, refreshCategories,
+    chartInstances, applyChartDefaults, updateChartsTheme,
+  };
 })();
