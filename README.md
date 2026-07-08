@@ -6,12 +6,6 @@
 
 Track your spending from the **terminal** or through a **beautiful responsive web dashboard**.
 
-<br>
-
-<img src="./src/images/Preview.png" width="900">
-
-<br>
-
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite)
@@ -39,7 +33,13 @@ Track your spending from the **terminal** or through a **beautiful responsive we
 ## 📸 Preview
 
 <p align="center">
-  <img src="./src/images/Preview.png" />
+  <img src="./src/images/Preview.png" width="900">
+  <img src="./src/images/dashboard-preview.png" width="900">
+  <img src="./src/images/Expenses.png" width="900">
+  <img src="./src/images/Reports.png" width="900">
+  <img src="./src/images/Categories.png" width="900">
+  <img src="./src/images/Budget.png" width="900">
+  <img src="./src/images/Mobile-preview.png" width="900">
 </p>
 
 ### CLI — Monthly summary
