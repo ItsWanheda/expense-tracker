@@ -17,22 +17,49 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
+  <!-- Aurora background layer -->
+  <div class="aurora" aria-hidden="true">
+    <span class="aurora-blob blob-1"></span>
+    <span class="aurora-blob blob-2"></span>
+    <span class="aurora-blob blob-3"></span>
+    <span class="aurora-blob blob-4"></span>
+  </div>
+
   <div class="app">
     <aside class="sidebar">
       <div class="brand">
         <span class="logo">💰</span>
         <h1>Expense Tracker</h1>
-        <!-- theme toggle -->
         <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
       </div>
       <nav class="nav">
-        <a href="#dashboard" class="nav-link active" data-view="dashboard">📊 Dashboard</a>
-        <a href="#expenses"  class="nav-link" data-view="expenses">📋 Expenses</a>
-        <a href="#categories" class="nav-link" data-view="categories">🏷️ Categories</a>
-        <a href="#reports"   class="nav-link" data-view="reports">📈 Reports</a>
-        <a href="#budget"    class="nav-link" data-view="budget">🎯 Budget</a>
+        <a href="#dashboard" class="nav-link active" data-view="dashboard">
+          <span class="nav-icon">📊</span><span>Dashboard</span>
+        </a>
+        <a href="#expenses"  class="nav-link" data-view="expenses">
+          <span class="nav-icon">📋</span><span>Expenses</span>
+          <span class="nav-badge" id="badge-expenses" hidden></span>
+        </a>
+        <a href="#categories" class="nav-link" data-view="categories">
+          <span class="nav-icon">🏷️</span><span>Categories</span>
+        </a>
+        <a href="#reports"   class="nav-link" data-view="reports">
+          <span class="nav-icon">📈</span><span>Reports</span>
+        </a>
+        <a href="#budget"    class="nav-link" data-view="budget">
+          <span class="nav-icon">🎯</span><span>Budget</span>
+        </a>
       </nav>
+
+      <!-- Streak card in sidebar footer -->
       <div class="sidebar-footer">
+        <div class="streak-card" id="streak-card" title="Daily logging streak">
+          <span class="streak-flame">🔥</span>
+          <div>
+            <div class="streak-count" id="streak-count">0</div>
+            <div class="streak-label">day streak</div>
+          </div>
+        </div>
         <a href="/api/export.csv" class="btn btn-ghost btn-sm">⬇️ Export CSV</a>
       </div>
     </aside>
@@ -41,8 +68,12 @@
       <header class="topbar">
         <button class="menu-toggle" id="menu-toggle" aria-label="Menu">☰</button>
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
-        <h2 id="page-title">Dashboard</h2>
+        <div class="topbar-title">
+          <h2 id="page-title">Dashboard</h2>
+          <p class="greeting" id="greeting"></p>
+        </div>
         <span id="today-date" class="muted"></span>
+        <button class="icon-btn" id="shortcut-btn" title="Keyboard shortcuts (?)">⌨️</button>
       </header>
 
       <section id="view-dashboard" class="view active"></section>
@@ -56,8 +87,13 @@
   <div id="modal-root"></div>
   <div id="toast-container"></div>
 
-  <!-- Floating Action Button -->
-  <button class="fab" id="fab-add" title="Add expense (N)">+</button>
+  <!-- Floating Action Button with extended menu -->
+  <div class="fab-cluster">
+    <button class="fab-mini" id="fab-quick" title="Quick add">⚡</button>
+    <button class="fab" id="fab-add" title="Add expense (N)">
+      <span class="fab-icon">+</span>
+    </button>
+  </div>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
