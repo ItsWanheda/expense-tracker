@@ -49,6 +49,20 @@ def create_app() -> Flask:
         CategoryRepository.delete(cid)
         return jsonify({"ok": True})
 
+    @app.put("/api/categories/<int:cid>")
+    def update_category(cid: int):
+        data = request.get_json(silent=True) or {}
+        name  = (data.get("name")  or "").strip()
+        color = data.get("color")
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+        try:
+            updated = CategoryRepository.update(cid, name=name, color=color)
+            if not updated:
+                return jsonify({"error": "Category not found"}), 404
+            return jsonify({"ok": True, "id": cid, "name": name, "color": color})
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 400
     # ---------- Expenses ----------
     @app.get("/api/expenses")
     def list_expenses():
