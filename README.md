@@ -40,6 +40,7 @@ Track your spending from the **terminal** or through a **beautiful responsive we
   <img src="./src/images/Categories.png" width="900">
   <img src="./src/images/Budget.png" width="900">
   <img src="./src/images/Mobile-preview.png" width="900">
+  <img src="./src/images/Mobile-preview-2.png" width="900">
 </p>
 
 ### CLI — Monthly summary
