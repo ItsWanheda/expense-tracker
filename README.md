@@ -16,7 +16,29 @@ Track your spending from the **terminal** or through a **beautiful responsive we
 
 ---
 
-## 📊 Project Overview
+# 📑 Table of Contents
+* [📊 Project Overview](#-project-overview)
+* [📸 Preview](#-preview)
+* [✨ Features](#-features)
+* [🛠️ Tech Stack](#️-tech-stack)
+* [📁 Project Structure](#-project-structure)
+* [🚀 Installation](#-installation)
+* [📖 CLI Usage](#-cli-usage)
+* [🌐 Web Interface](#-web-interface)
+* [🏛️ Architecture](#️-architecture)
+* [💾 Database Schema](#-database-schema)
+* [🧪 Running Tests](#-running-tests)
+* [🩹 Troubleshooting](#-troubleshooting)
+* [🛠️ Development](#️-development)
+* [🗺️ Roadmap](#️-roadmap)
+* [🤝 Contributing](#-contributing)
+* [📄 License](#-license)
+* [🙋 FAQ](#faq)
+* [⭐ Show Your Support](#-show-your-support)
+
+---
+
+# 📊 Project Overview
 
 | | |
 |---|---|
@@ -30,7 +52,7 @@ Track your spending from the **terminal** or through a **beautiful responsive we
 
 ---
 
-## 📸 Preview
+# 📸 Preview
 
 <p align="center">
   <img src="./src/images/Preview.png" width="900">
@@ -43,7 +65,7 @@ Track your spending from the **terminal** or through a **beautiful responsive we
   <img src="./src/images/Mobile-preview-2.png" width="900">
 </p>
 
-### CLI — Monthly summary
+## CLI — Monthly summary
 
 ```
 ─────────────────────── Summary — 2026-06 ───────────────────────
@@ -61,7 +83,7 @@ Track your spending from the **terminal** or through a **beautiful responsive we
  └────────────────┴───────┴─────────┴──────┘
 ```
 
-### Web — Dashboard, reports & per-category budgets
+## Web — Dashboard, reports & per-category budgets
 
 ```
 ┌──────────────────┬────────────────────────┬─────────────────┐
@@ -82,9 +104,9 @@ Per-category budgets
 
 ---
 
-## ✨ Features
+# ✨ Features
 
-### Core
+## Core
 - ➕ **Add / Edit / Delete** expenses with description, amount, date, and category
 - 🏷️ **Manage categories** — create custom ones with your own colors
 - 🔍 **Filter & search** by date range and category
@@ -93,12 +115,12 @@ Per-category budgets
 - 📤 **Export to CSV** for spreadsheet analysis or backup
 - 🗄️ **Local SQLite** — no servers, no cloud, your data stays on your machine
 
-### CLI
+## CLI
 - 🎨 **Beautiful terminal UI** powered by Rich
 - 📈 **Visualize** spending as a horizontal bar chart (PNG via matplotlib)
 - 🧪 **Fully tested** with pytest (6 tests, all passing)
 
-### 🌐 Web Interface (`0.2.0+`)
+## 🌐 Web Interface (`0.2.0+`)
 - 🖥️ **Single-page application** — Dashboard, Expenses, Categories, Reports, Budget
 - 📊 **Interactive charts** powered by Chart.js (bar + doughnut)
 - 🎯 **Per-category budget management** with progress bars
@@ -108,7 +130,7 @@ Per-category budgets
 
 ---
 
-## 🛠️ Tech Stack
+# 🛠️ Tech Stack
 
 | Layer            | Tool                                                  |
 |------------------|-------------------------------------------------------|
@@ -127,7 +149,7 @@ Per-category budgets
 
 ---
 
-## 📁 Project Structure
+# 📁 Project Structure
 
 ```
 expense-tracker/
@@ -166,21 +188,21 @@ The `src/` layout is the modern Python best practice — it prevents accidental 
 
 ---
 
-## 🚀 Installation
+# 🚀 Installation
 
-### Prerequisites
+## Prerequisites
 
 - **Python 3.10 or higher** — check with `py --version` or `python3 --version`
 - **pip** — usually bundled with Python
 
-### Step 1 — Clone the repository
+## Step 1 — Clone the repository
 
 ```bash
 git clone https://github.com/ItsWanheda/expense-tracker.git
 cd expense-tracker
 ```
 
-### Step 2 — Create a virtual environment
+## Step 2 — Create a virtual environment
 
 **Windows (PowerShell):**
 ```powershell
@@ -199,7 +221,7 @@ source .venv/bin/activate
 > Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 > ```
 
-### Step 3 — Install dependencies
+## Step 3 — Install dependencies
 
 **Recommended** (editable + dev tools):
 ```bash
@@ -211,7 +233,7 @@ pip install -e ".[dev]"
 pip install -r requirements.txt
 ```
 
-### Step 4 — Verify it works
+## Step 4 — Verify it works
 
 ```bash
 py -m expense_tracker --version
@@ -224,9 +246,9 @@ Expected output:
 
 ---
 
-## 📖 CLI Usage
+# 📖 CLI Usage
 
-### Quick start — your first 5 minutes
+## Quick start — your first 5 minutes
 
 ```bash
 # 1. See what categories exist (7 are auto-seeded)
@@ -253,7 +275,7 @@ py -m expense_tracker chart -o my-spending.png
 py -m expense_tracker export -o expenses.csv
 ```
 
-### All CLI commands
+## All CLI commands
 
 | Command | Description |
 |---|---|
@@ -269,7 +291,7 @@ py -m expense_tracker export -o expenses.csv
 | `categories add NAME` | Create a new category |
 | `categories delete ID` | Delete a category |
 
-### Adding expenses
+## Adding expenses
 
 ```bash
 # Minimal — defaults to today's date, no category
@@ -283,7 +305,7 @@ py -m expense_tracker add -a 9.99 -d "Netflix" -c Subscriptions
 # ? Category 'Subscriptions' doesn't exist. Create it? [y/N]: y
 ```
 
-### Listing with filters
+## Listing with filters
 
 ```bash
 # Most recent 20
@@ -299,7 +321,7 @@ py -m expense_tracker list -c Food
 py -m expense_tracker list -c Food --from 2024-05-01 --to 2024-05-31 -n 50
 ```
 
-### Editing & deleting
+## Editing & deleting
 
 ```bash
 # Only the fields you pass get updated (others stay the same)
@@ -311,7 +333,7 @@ py -m expense_tracker edit 3 --date 2024-05-20    # change date only
 py -m expense_tracker delete 5
 ```
 
-### Monthly summary
+## Monthly summary
 
 ```bash
 # Current month
@@ -340,7 +362,7 @@ Budget: 3000.00  Remaining: 312.51
 
 If you've exceeded your budget, `Remaining` will turn red automatically.
 
-### Budgets 🆕
+## Budgets 🆕
 
 ```bash
 # Overall monthly budget
@@ -354,14 +376,14 @@ py -m expense_tracker budget 50  -c Entertainment -m 2024-05
 
 You can mix both — an overall budget caps total spending, while per-category budgets cap individual categories. They're evaluated independently.
 
-### Charts
+## Charts
 
 ```bash
 py -m expense_tracker chart -o may.png            # saves may.png
 py -m expense_tracker chart -o may.png -m 2024-05  # specific month
 ```
 
-### CSV export
+## CSV export
 
 ```bash
 py -m expense_tracker export -o expenses.csv
@@ -372,11 +394,11 @@ The CSV has columns: `id, date, category, amount, description`.
 
 ---
 
-## 🌐 Web Interface
+# 🌐 Web Interface
 
 **New in `0.2.0`.** A complete single-page application that talks to the same SQLite database as the CLI — every entry you add in the browser shows up in the terminal and vice-versa.
 
-### Start the server
+## Start the server
 
 ```bash
 py -m expense_tracker.web
@@ -392,7 +414,7 @@ $env:FLASK_APP = "expense_tracker.web"   # Windows PowerShell
 flask run --debug
 ```
 
-### Pages
+## Pages
 
 | Page | What it does |
 |---|---|
@@ -402,7 +424,7 @@ flask run --debug
 | 📈 **Reports** | Interactive bar + doughnut charts (Chart.js) plus a category breakdown table with Budget & Remaining columns when applicable |
 | 🎯 **Budget** | Manage overall **and** per-category budgets in one place, with per-category progress bars and an active-budgets table with Edit/Delete |
 
-### API
+## API
 
 The web UI talks to a small JSON REST API. You can use it directly too:
 
@@ -444,7 +466,7 @@ curl -X PUT http://127.0.0.1:5000/api/budget \
 
 ---
 
-## 🏛️ Architecture
+# 🏛️ Architecture
 
 This project follows a **layered architecture** that separates concerns cleanly:
 
@@ -478,7 +500,7 @@ Cross-cutting:
   visualization.py → matplotlib charts (CLI only)
 ```
 
-### Why this structure?
+## Why this structure?
 
 | Layer | Responsibility | Why it matters |
 |---|---|---|
@@ -488,7 +510,7 @@ Cross-cutting:
 
 The **web layer** is just a thin Flask wrapper around the same repositories the CLI uses — zero duplicated SQL, zero duplicated business logic.
 
-### Key design decisions
+## Key design decisions
 
 - **Idempotent `initialize_database()`** — called on every startup (CLI + web); safe to run repeatedly
 - **Idempotent `CategoryRepository.create()`** — returns existing ID if name is taken (no surprises)
@@ -499,7 +521,7 @@ The **web layer** is just a thin Flask wrapper around the same repositories the 
 
 ---
 
-## 💾 Database Schema
+# 💾 Database Schema
 
 ```sql
 CREATE TABLE categories (
@@ -530,11 +552,11 @@ CREATE TABLE budgets (
 );
 ```
 
-### Default categories (auto-seeded on first run)
+## Default categories (auto-seeded on first run)
 
 Food 🍔 · Transport 🚗 · Housing 🏠 · Entertainment 🎬 · Health 💊 · Shopping 🛍️ · Other 📦
 
-### Database location
+## Database location
 
 | OS | Path |
 |---|---|
@@ -543,7 +565,7 @@ Food 🍔 · Transport 🚗 · Housing 🏠 · Entertainment 🎬 · Health 💊
 
 ---
 
-## 🧪 Running Tests
+# 🧪 Running Tests
 
 ```bash
 # Run all tests, verbose
@@ -559,7 +581,7 @@ py -m pytest tests/test_models.py -v
 py -m pytest tests/test_models.py::test_update_expense -v
 ```
 
-### Expected output
+## Expected output
 
 ```
 tests/test_models.py::test_add_and_get_expense PASSED
@@ -572,7 +594,7 @@ tests/test_reports.py::test_monthly_report PASSED
 ========================== 6 passed in 0.4s ==========================
 ```
 
-### How tests are isolated
+## How tests are isolated
 
 The `tmp_db` fixture in `conftest.py`:
 1. Creates a **temporary SQLite file** for each test (via `tmp_path`)
@@ -584,7 +606,7 @@ This means tests never touch your real database — completely safe.
 
 ---
 
-## 🩹 Troubleshooting
+# 🩹 Troubleshooting
 
 <details>
 <summary><b>❌ <code>python</code> is not recognized (Windows)</b></summary>
@@ -667,9 +689,9 @@ cd src && py expense_tracker/web.py
 
 ---
 
-## 🛠️ Development
+# 🛠️ Development
 
-### Adding a new command
+## Adding a new command
 
 1. Open `src/expense_tracker/cli.py`
 2. Add a new function decorated with `@cli.command()` (or `@<group>.command()`)
@@ -678,7 +700,7 @@ cd src && py expense_tracker/web.py
 5. (Optional) Add a UI section in `static/js/app.js`
 6. Add a test in `tests/`
 
-### Adding a new field
+## Adding a new field
 
 1. Add the column to `SCHEMA` in `database.py`
 2. Add a migration note to handle existing databases
@@ -687,7 +709,7 @@ cd src && py expense_tracker/web.py
 5. Update `reports.py` / `web.py` / `app.js` if the field is exposed to users
 6. Add tests for the new behavior
 
-### Code style
+## Code style
 
 - **PEP 8** for naming and layout
 - **Type hints** on all public functions
@@ -697,7 +719,7 @@ cd src && py expense_tracker/web.py
 
 ---
 
-## 🗺️ Roadmap
+# 🗺️ Roadmap
 
 Planned for future releases:
 - [x] **Core CRUD for expenses and categories**
@@ -739,7 +761,7 @@ Planned for future releases:
 
 ---
 
-## 🤝 Contributing
+# 🤝 Contributing
 
 Contributions of all sizes are welcome! Here's the workflow:
 
@@ -763,13 +785,13 @@ Please open an issue first if you want to discuss a big change before implementi
 
 ---
 
-## 📄 License
+# 📄 License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details. You're free to use, modify, and distribute it, commercially or otherwise.
 
 ---
 
-## 🙋 FAQ
+# 🙋 FAQ
 
 **Q: Is my financial data safe?**
 A: 100%. Everything is stored in a single SQLite file on your machine. There is no cloud sync, no telemetry, no analytics — nothing leaves your computer.
@@ -797,7 +819,7 @@ A: Flask's templating + static-file serving made the bundled SPA dead-simple to 
 
 ---
 
-## ⭐ Show Your Support
+# ⭐ Show Your Support
 
 If this project helped you learn something or saved you time, give it a star on GitHub! It helps others discover it.
 
