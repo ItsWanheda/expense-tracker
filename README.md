@@ -722,11 +722,11 @@ cd src && py expense_tracker/web.py
 # 🗺️ Roadmap
 
 Planned for future releases:
-- [x] **Core CRUD for expenses and categories**
-- [x] **Monthly summary & overall budget tracking**
-- [x] **CSV export**
-- [x] **Matplotlib charts (CLI)**
-- [x] **Pytest test suite**
+- [x] **Core CRUD for expenses and categories** ✅
+- [x] **Monthly summary & overall budget tracking** ✅
+- [x] **CSV export** ✅
+- [x] **Matplotlib charts (CLI)** ✅
+- [x] **Pytest test suite** ✅
 - [x] **Per-category budgets** with progress bars ✅ (`0.2.0`)
 - [x] **Web interface** using the same repositories ✅ (`0.2.0`)
 - [x] **Interactive charts** (Chart.js in the web UI) ✅ (`0.2.0`)
@@ -734,7 +734,8 @@ Planned for future releases:
 - [x] **Light/dark theme** with **live chart recoloring** ✅ ( 0.3.0)
 - [x] **Command palette & keyboard shortcuts** ✅ ( 0.3.0)
 - [x] **Toast with Undo action** for accidental deletes ✅ ( 0.3.0)
-- [ ] **Recurring expenses** (rent, subscriptions)
+- [x] **Recurring expenses** (rent, subscriptions) ✅ ( 0.4.0)
+- [x] **Advanced Charts** ✅ ( 0.4.0)
 - [ ] **Multi-currency** support with conversion rates
 - [ ] **Interactive REPL mode** (`expense shell`)
 - [ ] **JSON import / export**
@@ -748,7 +749,6 @@ Planned for future releases:
 - [ ] **Notifications**
 - [ ] **Multiple Wallets**
 - [ ] **Multi-Currency Support**
-- [ ] **Advanced Charts**
 - [ ] **AI Spending Insights**
 - [ ] **Progressive Web App (PWA)**
 - [ ] **Docker Support**
