@@ -8,7 +8,13 @@ from datetime import date as date_cls
 from flask import Flask, Response, jsonify, render_template, request
 
 from .database import initialize_database
-from .models import BudgetRepository, CategoryRepository, Expense, ExpenseRepository
+from .models import (
+    BudgetRepository,
+    CategoryRepository,
+    Expense,
+    ExpenseRepository,
+    RecurringExpenseRepository,
+)
 from .reports import current_month, generate_monthly_report
 
 
@@ -209,7 +215,114 @@ def create_app() -> Flask:
             mimetype="text/csv",
             headers={"Content-Disposition": "attachment; filename=expenses.csv"},
         )
+    # ---------- Recurring Expenses ----------
 
+    @app.get("/api/recurring")
+    def list_recurring():
+        # Automatically create anything that is due.
+        generated = RecurringExpenseRepository.generate_due()
+
+        recurring = RecurringExpenseRepository.list_all()
+
+        return jsonify({
+            "generated": generated,
+            "items": recurring,
+        })
+
+    @app.post("/api/recurring")
+    def create_recurring():
+        data = request.get_json(silent=True) or {}
+
+        try:
+            amount = float(data["amount"])
+
+            if amount <= 0:
+                raise ValueError("amount must be positive")
+
+            description = (data.get("description") or "").strip()
+
+            if not description:
+                raise ValueError("description is required")
+
+            frequency = data.get("frequency") or "monthly"
+
+            next_run = (
+                data.get("next_run")
+                or date_cls.today().isoformat()
+            )
+
+            category_id = data.get("category_id") or None
+
+            rid = RecurringExpenseRepository.create(
+                amount=amount,
+                description=description,
+                category_id=category_id,
+                frequency=frequency,
+                next_run=next_run,
+            )
+
+            return jsonify({
+                "id": rid,
+                "ok": True,
+            }), 201
+
+        except (KeyError, ValueError, TypeError) as exc:
+            return jsonify({
+                "error": str(exc)
+            }), 400
+
+    @app.put("/api/recurring/<int:rid>")
+    def update_recurring(rid: int):
+        data = request.get_json(silent=True) or {}
+
+        try:
+            if "amount" in data:
+                data["amount"] = float(data["amount"])
+
+            if "category_id" in data:
+                data["category_id"] = data["category_id"] or None
+
+            if "active" in data:
+                data["active"] = bool(data["active"])
+
+            updated = RecurringExpenseRepository.update(
+                rid,
+                **data,
+            )
+
+            if not updated:
+                return jsonify({
+                    "error": "Recurring expense not found"
+                }), 404
+
+            return jsonify({
+                "ok": True
+            })
+
+        except (ValueError, TypeError) as exc:
+            return jsonify({
+                "error": str(exc)
+            }), 400
+
+    @app.delete("/api/recurring/<int:rid>")
+    def delete_recurring(rid: int):
+        if not RecurringExpenseRepository.delete(rid):
+            return jsonify({
+                "error": "Recurring expense not found"
+            }), 404
+
+        return jsonify({
+            "ok": True
+        })
+
+    @app.post("/api/recurring/generate")
+    def generate_recurring():
+        generated = RecurringExpenseRepository.generate_due()
+
+        return jsonify({
+            "ok": True,
+            "generated": generated,
+        })
     # ---------- Health check ----------
     @app.get("/api/health")
     def health():
