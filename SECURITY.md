@@ -7,9 +7,14 @@ Maintaining the security an integrity of the **Expense-Tracker** project is a to
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.2.x   | :white_check_mark: |
-| 0.1.x   | :white_check_mark: |
+| 0.4.x   | :white_check_mark: |
+| 0.3.x   | :white_check_mark: |
+| 0.2.x   | :x:                |
+| 0.1.x   | :x:                |
 
+> **Support policy:** Versions `0.1.x` and `0.2.x` are no longer supported.
+> Version `0.3.x` remains supported during the `0.4.x` development cycle.
+> Users are encouraged to upgrade to the latest available version.
 ---
 
 ## 🚨 Reporting a Vulnerability
