@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +11,13 @@
         if (localStorage.getItem('theme') === 'dark') {
           document.documentElement.classList.add('theme-dark');
         }
-      } catch (e) {}
+      } catch (e) { }
     })();
   </script>
   <link rel="stylesheet" href="../static/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
   <!-- Aurora background layer -->
   <div class="aurora" aria-hidden="true">
@@ -36,18 +38,24 @@
         <a href="#dashboard" class="nav-link active" data-view="dashboard">
           <span class="nav-icon">📊</span><span>Dashboard</span>
         </a>
-        <a href="#expenses"  class="nav-link" data-view="expenses">
+        <a href="#expenses" class="nav-link" data-view="expenses">
           <span class="nav-icon">📋</span><span>Expenses</span>
           <span class="nav-badge" id="badge-expenses" hidden></span>
         </a>
         <a href="#categories" class="nav-link" data-view="categories">
           <span class="nav-icon">🏷️</span><span>Categories</span>
         </a>
-        <a href="#reports"   class="nav-link" data-view="reports">
+        <a href="#reports" class="nav-link" data-view="reports">
           <span class="nav-icon">📈</span><span>Reports</span>
         </a>
-        <a href="#budget"    class="nav-link" data-view="budget">
+        <a href="#budget" class="nav-link" data-view="budget">
           <span class="nav-icon">🎯</span><span>Budget</span>
+        </a>
+        <a href="#recurring" class="nav-link" data-view="recurring">
+          <span class="nav-icon">🔄</span><span>Recurring</span>
+        </a>
+        <a href="#charts" class="nav-link" data-view="charts">
+          <span class="nav-icon">📊</span><span>Advanced Charts</span>
         </a>
       </nav>
 
@@ -77,10 +85,12 @@
       </header>
 
       <section id="view-dashboard" class="view active"></section>
-      <section id="view-expenses"  class="view"></section>
+      <section id="view-expenses" class="view"></section>
       <section id="view-categories" class="view"></section>
-      <section id="view-reports"   class="view"></section>
-      <section id="view-budget"    class="view"></section>
+      <section id="view-reports" class="view"></section>
+      <section id="view-budget" class="view"></section>
+      <section id="view-recurring" class="view"></section>
+      <section id="view-charts" class="view"></section>
     </main>
   </div>
 
@@ -97,4 +107,5 @@
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
+
 </html>
