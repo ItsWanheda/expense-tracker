@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
+
 DEFAULT_DB_PATH = Path.home() / ".expense_tracker" / "expenses.db"
 
 
@@ -16,21 +17,32 @@ def get_db_path() -> Path:
 
 
 @contextmanager
-def get_connection(db_path: Path | None = None) -> Iterator[sqlite3.Connection]:
+def get_connection(
+    db_path: Path | None = None,
+) -> Iterator[sqlite3.Connection]:
     """Context-managed DB connection with auto-commit/rollback."""
+
     path = db_path or get_db_path()
+
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+
     try:
         yield conn
         conn.commit()
+
     except Exception:
         conn.rollback()
         raise
+
     finally:
         conn.close()
 
+
+# ============================================================================
+# DATABASE SCHEMA
+# ============================================================================
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS categories (
@@ -40,6 +52,7 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+
 CREATE TABLE IF NOT EXISTS expenses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     amount REAL NOT NULL CHECK (amount > 0),
@@ -48,22 +61,95 @@ CREATE TABLE IF NOT EXISTS expenses (
     date TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+
+    FOREIGN KEY (category_id)
+        REFERENCES categories(id)
+        ON DELETE SET NULL
 );
+
 
 CREATE TABLE IF NOT EXISTS budgets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     category_id INTEGER,
     month TEXT NOT NULL,
     amount REAL NOT NULL CHECK (amount >= 0),
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+
+    FOREIGN KEY (category_id)
+        REFERENCES categories(id)
+        ON DELETE CASCADE,
+
     UNIQUE (category_id, month)
 );
 
-CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
-CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category_id);
-CREATE INDEX IF NOT EXISTS idx_budgets_month ON budgets(month);
+
+-- ==========================================================================
+-- RECURRING EXPENSES
+-- ==========================================================================
+
+CREATE TABLE IF NOT EXISTS recurring_expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    amount REAL NOT NULL CHECK (amount > 0),
+
+    description TEXT NOT NULL,
+
+    category_id INTEGER,
+
+    frequency TEXT NOT NULL
+        CHECK (
+            frequency IN (
+                'weekly',
+                'monthly',
+                'yearly'
+            )
+        ),
+
+    next_run TEXT NOT NULL,
+
+    -- Original day of the month/year used for monthly/yearly schedules.
+    anchor_day INTEGER,
+
+    -- 1 = active, 0 = paused
+    active INTEGER NOT NULL DEFAULT 1
+        CHECK (active IN (0, 1)),
+
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (category_id)
+        REFERENCES categories(id)
+        ON DELETE SET NULL
+);
+
+
+-- ==========================================================================
+-- INDEXES
+-- ==========================================================================
+
+CREATE INDEX IF NOT EXISTS idx_expenses_date
+    ON expenses(date);
+
+CREATE INDEX IF NOT EXISTS idx_expenses_category
+    ON expenses(category_id);
+
+CREATE INDEX IF NOT EXISTS idx_budgets_month
+    ON budgets(month);
+
+CREATE INDEX IF NOT EXISTS idx_recurring_next_run
+    ON recurring_expenses(next_run);
+
+CREATE INDEX IF NOT EXISTS idx_recurring_active
+    ON recurring_expenses(active);
+
+CREATE INDEX IF NOT EXISTS idx_recurring_category
+    ON recurring_expenses(category_id);
 """
+
+
+# ============================================================================
+# DEFAULT CATEGORIES
+# ============================================================================
 
 DEFAULT_CATEGORIES = [
     ("Food", "#e74c3c"),
@@ -76,13 +162,35 @@ DEFAULT_CATEGORIES = [
 ]
 
 
-def initialize_database(db_path: Path | None = None) -> None:
-    """Create tables and seed default categories if empty."""
+# ============================================================================
+# INITIALIZATION
+# ============================================================================
+
+def initialize_database(
+    db_path: Path | None = None,
+) -> None:
+    """
+    Create all database tables and indexes.
+
+    Existing data is preserved because every table uses
+    CREATE TABLE IF NOT EXISTS.
+    """
+
     with get_connection(db_path) as conn:
+
+        # Create/update schema.
         conn.executescript(SCHEMA)
-        cur = conn.execute("SELECT COUNT(*) AS c FROM categories")
+
+        # Seed default categories only when there are none.
+        cur = conn.execute(
+            "SELECT COUNT(*) AS c FROM categories"
+        )
+
         if cur.fetchone()["c"] == 0:
             conn.executemany(
-                "INSERT INTO categories (name, color) VALUES (?, ?)",
+                """
+                INSERT INTO categories (name, color)
+                VALUES (?, ?)
+                """,
                 DEFAULT_CATEGORIES,
             )
