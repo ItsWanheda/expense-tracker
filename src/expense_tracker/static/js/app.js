@@ -38,7 +38,7 @@
   // -----------------------------------------------------------------------
   //  Helpers
   // -----------------------------------------------------------------------
-  const $  = (sel, root = document) => root.querySelector(sel);
+  const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
   const safeOn = (el, ev, fn) => {
     if (!el) { console.warn(`[safeOn] missing element for ${ev}`); return; }
@@ -105,9 +105,9 @@
       return res.status === 204 ? null : res.json();
     },
     categories: {
-      list:   ()       => API.req('/api/categories'),
-      create: (data)   => API.req('/api/categories',       { method: 'POST',   body: JSON.stringify(data) }),
-      remove: (id)     => API.req('/api/categories/' + id, { method: 'DELETE' }),
+      list: () => API.req('/api/categories'),
+      create: (data) => API.req('/api/categories', { method: 'POST', body: JSON.stringify(data) }),
+      remove: (id) => API.req('/api/categories/' + id, { method: 'DELETE' }),
     },
     expenses: {
       list: (params = {}) => {
@@ -116,29 +116,54 @@
         ).toString();
         return API.req('/api/expenses' + (q ? '?' + q : ''));
       },
-      create: (data) => API.req('/api/expenses',        { method: 'POST', body: JSON.stringify(data) }),
-      update: (id, d) => API.req('/api/expenses/' + id, { method: 'PUT',  body: JSON.stringify(d) }),
-      remove: (id)    => API.req('/api/expenses/' + id, { method: 'DELETE' }),
+      create: (data) => API.req('/api/expenses', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id, d) => API.req('/api/expenses/' + id, { method: 'PUT', body: JSON.stringify(d) }),
+      remove: (id) => API.req('/api/expenses/' + id, { method: 'DELETE' }),
       summary: (month) => API.req('/api/reports/summary' + (month ? '?month=' + month : '')),
     },
     reports: {
       summary: (month) => API.req('/api/reports/summary' + (month ? '?month=' + month : '')),
-      heatmap: (year)  => API.req('/api/reports/heatmap'  + (year  ? '?year='  + year  : '')),
+      heatmap: (year) => API.req('/api/reports/heatmap' + (year ? '?year=' + year : '')),
     },
     budget: {
       get: (month) => API.req('/api/budget' + (month ? '?month=' + month : '')),
       set: (amount, month) =>
         API.req('/api/budget', { method: 'PUT', body: JSON.stringify({ amount, month }) }),
     },
+    recurring: {
+      list: () => API.req('/api/recurring'),
+
+      create: (data) =>
+        API.req('/api/recurring', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        }),
+
+      update: (id, data) =>
+        API.req('/api/recurring/' + id, {
+          method: 'PUT',
+          body: JSON.stringify(data)
+        }),
+
+      remove: (id) =>
+        API.req('/api/recurring/' + id, {
+          method: 'DELETE'
+        }),
+
+      generate: () =>
+        API.req('/api/recurring/generate', {
+          method: 'POST'
+        }),
+    },
   };
 
   // -----------------------------------------------------------------------
   //  Date utilities
   // -----------------------------------------------------------------------
-  const today    = () => new Date().toISOString().slice(0, 10);
+  const today = () => new Date().toISOString().slice(0, 10);
   const curMonth = () => new Date().toISOString().slice(0, 7);
-  const curYear  = () => new Date().getFullYear();
-  const escHTML  = (s) => String(s ?? '').replace(/[&<>"']/g,
+  const curYear = () => new Date().getFullYear();
+  const escHTML = (s) => String(s ?? '').replace(/[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const todayEl = $('#today-date');
@@ -178,7 +203,7 @@
   function applyChartDefaults() {
     if (typeof Chart === 'undefined') return;
     const t = chartTheme();
-    Chart.defaults.color       = t.text;
+    Chart.defaults.color = t.text;
     Chart.defaults.borderColor = t.grid;
     Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
     Chart.defaults.font.weight = 500;
@@ -186,7 +211,7 @@
   function createChart(canvas, config) {
     if (!canvas || typeof Chart === 'undefined') return null;
     if (chartInstances[canvas.id]) {
-      try { chartInstances[canvas.id].destroy(); } catch (_) {}
+      try { chartInstances[canvas.id].destroy(); } catch (_) { }
       delete chartInstances[canvas.id];
     }
     const t = chartTheme();
@@ -220,14 +245,14 @@
       if (o.plugins?.legend?.labels) o.plugins.legend.labels.color = t.legend;
       if (o.plugins?.tooltip) {
         o.plugins.tooltip.backgroundColor = t.tooltipBg;
-        o.plugins.tooltip.titleColor      = t.tooltipFg;
-        o.plugins.tooltip.bodyColor       = t.tooltipFg;
-        o.plugins.tooltip.borderColor     = t.grid;
+        o.plugins.tooltip.titleColor = t.tooltipFg;
+        o.plugins.tooltip.bodyColor = t.tooltipFg;
+        o.plugins.tooltip.borderColor = t.grid;
       }
       ['x', 'y'].forEach((k) => {
         if (o.scales?.[k]) {
           if (o.scales[k].ticks) o.scales[k].ticks.color = t.text;
-          if (o.scales[k].grid)  o.scales[k].grid.color  = t.grid;
+          if (o.scales[k].grid) o.scales[k].grid.color = t.grid;
         }
       });
       chart.update('none');
@@ -240,7 +265,7 @@
   (function initMobileMenu() {
     const toggle = $('#menu-toggle'), sidebar = $('.sidebar'), overlay = $('#sidebar-overlay');
     if (!toggle || !sidebar) return;
-    const open  = () => { sidebar.classList.add('open'); overlay?.classList.add('show'); document.body.style.overflow = 'hidden'; };
+    const open = () => { sidebar.classList.add('open'); overlay?.classList.add('show'); document.body.style.overflow = 'hidden'; };
     const close = () => { sidebar.classList.remove('open'); overlay?.classList.remove('show'); document.body.style.overflow = ''; };
     safeOn(toggle, 'click', open);
     safeOn(overlay, 'click', close);
@@ -260,7 +285,7 @@
       const next = document.body.classList.toggle('theme-dark');
       document.documentElement.classList.toggle('theme-dark', next);
       btn.textContent = next ? '☀️' : '🌙';
-      try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch (_) {}
+      try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch (_) { }
       applyChartDefaults();
       updateChartsTheme();
     });
@@ -333,7 +358,15 @@
   // -----------------------------------------------------------------------
   //  State + router
   // -----------------------------------------------------------------------
-  const VIEWS = ['dashboard', 'expenses', 'categories', 'reports', 'budget'];
+  const VIEWS = [
+    'dashboard',
+    'expenses',
+    'categories',
+    'reports',
+    'budget',
+    'recurring',
+    'charts'
+  ];
   const state = {
     categories: [],
     selectedMonth: curMonth(),
@@ -356,7 +389,7 @@
 
     Object.keys(chartInstances).forEach((id) => {
       if (!document.getElementById(id)) {
-        try { chartInstances[id].destroy(); } catch (_) {}
+        try { chartInstances[id].destroy(); } catch (_) { }
         delete chartInstances[id];
       }
     });
@@ -403,12 +436,12 @@
               <tr>
                 <td>${escHTML(e.date)}</td>
                 <td>${e.category_name
-                  ? `<span class="category-pill"><span class="category-dot" style="background:${escHTML(e.category_color || 'var(--primary)')}"></span>${escHTML(e.category_name)}</span>`
-                  : '<span class="muted">—</span>'}</td>
+        ? `<span class="category-pill"><span class="category-dot" style="background:${escHTML(e.category_color || 'var(--primary)')}"></span>${escHTML(e.category_name)}</span>`
+        : '<span class="muted">—</span>'}</td>
                 <td>${escHTML(e.description)}</td>
                 <td class="numeric"><strong>${fmtMoney(e.amount)}</strong></td>
                 <td><div class="row-actions">
-                  ${onEdit   ? '<button class="btn btn-sm act-edit">Edit</button>' : ''}
+                  ${onEdit ? '<button class="btn btn-sm act-edit">Edit</button>' : ''}
                   ${onDelete ? '<button class="btn btn-sm btn-danger act-del">Delete</button>' : ''}
                 </div></td>
               </tr>`).join('')}
@@ -422,9 +455,9 @@
     rows.forEach((tr, idx) => {
       const exp = expenses[idx];
       const editBtn = tr.querySelector('.act-edit');
-      const delBtn  = tr.querySelector('.act-del');
-      if (editBtn && onEdit)   editBtn.addEventListener('click', () => onEdit(exp));
-      if (delBtn  && onDelete) delBtn.addEventListener('click',  () => onDelete(exp));
+      const delBtn = tr.querySelector('.act-del');
+      if (editBtn && onEdit) editBtn.addEventListener('click', () => onEdit(exp));
+      if (delBtn && onDelete) delBtn.addEventListener('click', () => onDelete(exp));
     });
   }
 
@@ -451,14 +484,14 @@
             <select name="category_id">
               <option value="">— None —</option>
               ${(state.categories || []).map((c) =>
-                `<option value="${c.id}" ${(expense?.category_id == c.id || (!expense && presetCategoryId == c.id)) ? 'selected' : ''}>${escHTML(c.name)}</option>`
-              ).join('')}
+        `<option value="${c.id}" ${(expense?.category_id == c.id || (!expense && presetCategoryId == c.id)) ? 'selected' : ''}>${escHTML(c.name)}</option>`
+      ).join('')}
             </select>
           </div>
         </div>`,
       onSubmit: async (data) => {
         if (isEdit) { await API.expenses.update(expense.id, data); toast('Expense updated', 'success'); }
-        else        { await API.expenses.create(data); toast('Expense added', 'success'); }
+        else { await API.expenses.create(data); toast('Expense added', 'success'); }
         trackRecentCategory(parseInt(data.category_id) || null);
         onSaved?.();
       },
@@ -474,16 +507,16 @@
   function trackRecentCategory(id) {
     if (!id) return;
     state.recentCategories = [id, ...state.recentCategories.filter((x) => x !== id)].slice(0, 6);
-    try { localStorage.setItem('recentCats', JSON.stringify(state.recentCategories)); } catch (_) {}
+    try { localStorage.setItem('recentCats', JSON.stringify(state.recentCategories)); } catch (_) { }
   }
-  try { state.recentCategories = JSON.parse(localStorage.getItem('recentCats') || '[]'); } catch (_) {}
+  try { state.recentCategories = JSON.parse(localStorage.getItem('recentCats') || '[]'); } catch (_) { }
 
   // -----------------------------------------------------------------------
   //  Heatmap builder
   // -----------------------------------------------------------------------
   function buildHeatmap(year, byDay) {
     try {
-      const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
       const jan1 = new Date(year, 0, 1);
       const firstMonday = new Date(jan1);
@@ -505,7 +538,7 @@
       const cellsHTML = weeks.map((w) =>
         w.map((d) => {
           const inYear = d.getFullYear() === year;
-          const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+          const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           const v = inYear ? (byDay[ds] || 0) : 0;
           let lvl = 0;
           if (inYear && v > 0 && maxAmount > 0) {
@@ -553,12 +586,831 @@
       return `<div class="empty">Heatmap failed: ${escHTML(err.message)}</div>`;
     }
   }
+  // ============================================================================
+  // RECURRING EXPENSE MODAL
+  // ============================================================================
 
+  function openRecurringModal(existing = null) {
+    const editing = Boolean(existing);
+
+    const categoryOptions = state.categories
+      .map((c) => `
+      <option
+        value="${c.id}"
+        ${existing && Number(existing.category_id) === Number(c.id) ? 'selected' : ''}
+      >
+        ${escHTML(c.name)}
+      </option>
+    `)
+      .join('');
+
+    openModal({
+      title: editing
+        ? 'Edit recurring expense'
+        : 'New recurring expense',
+
+      submitText: editing ? 'Save changes' : 'Create recurring',
+
+      body: `
+      <div class="form-row">
+        <label>Amount</label>
+        <input
+          type="number"
+          name="amount"
+          min="0.01"
+          step="0.01"
+          required
+          value="${editing ? escHTML(existing.amount) : ''}"
+          placeholder="e.g. 850"
+        >
+      </div>
+
+      <div class="form-row">
+        <label>Description</label>
+        <input
+          name="description"
+          required
+          value="${editing ? escHTML(existing.description) : ''}"
+          placeholder="e.g. Apartment rent"
+        >
+      </div>
+
+      <div class="form-row">
+        <label>Category</label>
+        <select name="category_id">
+          <option value="">No category</option>
+          ${categoryOptions}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label>Frequency</label>
+        <select name="frequency" id="recurring-frequency">
+          <option
+            value="monthly"
+            ${!editing || existing.frequency === 'monthly' ? 'selected' : ''}
+          >
+            Monthly
+          </option>
+
+          <option
+            value="weekly"
+            ${editing && existing.frequency === 'weekly' ? 'selected' : ''}
+          >
+            Weekly
+          </option>
+
+          <option
+            value="yearly"
+            ${editing && existing.frequency === 'yearly' ? 'selected' : ''}
+          >
+            Yearly
+          </option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label>Next run</label>
+        <input
+          type="date"
+          name="next_run"
+          required
+          value="${editing
+          ? escHTML(existing.next_run)
+          : today()
+        }"
+        >
+      </div>
+
+      <div class="muted" style="font-size:12px">
+        The app automatically creates the expense when the next run date
+        arrives. Missed dates are also caught up automatically.
+      </div>
+    `,
+
+      onSubmit: async (data) => {
+        data.amount = Number(data.amount);
+        data.category_id = data.category_id
+          ? Number(data.category_id)
+          : null;
+
+        if (editing) {
+          await API.recurring.update(
+            existing.id,
+            data
+          );
+
+          toast(
+            'Recurring expense updated',
+            'success'
+          );
+        } else {
+          await API.recurring.create(data);
+
+          toast(
+            'Recurring expense created',
+            'success'
+          );
+        }
+
+        renderers.recurring();
+      },
+    });
+  }
   // -----------------------------------------------------------------------
   //  View renderers
   // -----------------------------------------------------------------------
   const renderers = {
+    // ================================================================
+    // RECURRING EXPENSES
+    // ================================================================
+    async recurring() {
+      const root = $('#view-recurring');
+      if (!root) return;
 
+      root.innerHTML = `
+        <div class="card">
+          <div class="toolbar">
+            <div>
+              <div class="card-title">🔄 Recurring expenses</div>
+              <div class="muted">
+                Rent, subscriptions, memberships and other automatic expenses.
+              </div>
+            </div>
+
+            <div class="spacer"></div>
+
+            <button class="btn btn-sm" id="generate-recurring">
+              ⚡ Generate due
+            </button>
+
+            <button class="btn btn-primary" id="add-recurring">
+              + Add recurring
+            </button>
+          </div>
+
+          <div id="recurring-content">
+            ${skeleton(5)}
+          </div>
+        </div>
+      `;
+
+      const load = async () => {
+        const content = $('#recurring-content');
+        if (!content) return;
+
+        content.innerHTML = skeleton(6);
+
+        try {
+          const result = await API.recurring.list();
+          const items = result.items || [];
+
+          if (result.generated > 0) {
+            toast(
+              `${result.generated} recurring expense${result.generated === 1 ? '' : 's'} generated`,
+              'success'
+            );
+          }
+
+          if (!items.length) {
+            content.innerHTML = `
+              <div class="empty">
+                <div class="icon">🔄</div>
+                <h3>No recurring expenses</h3>
+                <p>Add your rent, Netflix, gym membership, subscriptions, etc.</p>
+                <button class="btn btn-primary" id="empty-add-recurring">
+                  + Add recurring expense
+                </button>
+              </div>
+            `;
+
+            safeOn(
+              $('#empty-add-recurring'),
+              'click',
+              () => openRecurringModal()
+            );
+
+            return;
+          }
+
+          content.innerHTML = `
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Frequency</th>
+                    <th>Next run</th>
+                    <th>Status</th>
+                    <th class="numeric">Amount</th>
+                    <th></th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  ${items.map((r) => `
+                    <tr>
+                      <td>
+                        <strong>${escHTML(r.description)}</strong>
+                      </td>
+
+                      <td>
+                        ${r.category_name
+              ? `<span class="category-pill">
+                                <span
+                                  class="category-dot"
+                                  style="background:${escHTML(r.category_color || 'var(--primary)')}"
+                                ></span>
+                                ${escHTML(r.category_name)}
+                              </span>`
+              : '<span class="muted">—</span>'
+            }
+                      </td>
+
+                      <td>
+                        ${r.frequency === 'monthly'
+              ? '📅 Monthly'
+              : r.frequency === 'weekly'
+                ? '📆 Weekly'
+                : '🎂 Yearly'}
+                      </td>
+
+                      <td>${escHTML(r.next_run)}</td>
+
+                      <td>
+                        ${Number(r.active)
+              ? '<span class="chip success">Active</span>'
+              : '<span class="chip">Paused</span>'
+            }
+                      </td>
+
+                      <td class="numeric">
+                        <strong>${fmtMoney(r.amount)}</strong>
+                      </td>
+
+                      <td>
+                        <div class="row-actions">
+                          <button
+                            class="btn btn-sm recurring-edit"
+                            data-id="${r.id}"
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            class="btn btn-sm recurring-toggle"
+                            data-id="${r.id}"
+                            data-active="${r.active ? 1 : 0}"
+                          >
+                            ${Number(r.active) ? 'Pause' : 'Resume'}
+                          </button>
+
+                          <button
+                            class="btn btn-sm recurring-delete"
+                            data-id="${r.id}"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+
+          $$('.recurring-edit').forEach((btn) => {
+            safeOn(btn, 'click', () => {
+              const item = items.find(
+                (x) => Number(x.id) === Number(btn.dataset.id)
+              );
+
+              if (item) openRecurringModal(item);
+            });
+          });
+
+          $$('.recurring-toggle').forEach((btn) => {
+            safeOn(btn, 'click', async () => {
+              const id = Number(btn.dataset.id);
+              const active = btn.dataset.active !== '1';
+
+              try {
+                await API.recurring.update(id, { active });
+
+                toast(
+                  active
+                    ? 'Recurring expense resumed'
+                    : 'Recurring expense paused',
+                  'success'
+                );
+
+                load();
+              } catch (err) {
+                toast(err.message, 'error');
+              }
+            });
+          });
+
+          $$('.recurring-delete').forEach((btn) => {
+            safeOn(btn, 'click', async () => {
+              const id = Number(btn.dataset.id);
+
+              if (!confirm('Delete this recurring expense?')) return;
+
+              try {
+                await API.recurring.remove(id);
+
+                toast(
+                  'Recurring expense deleted',
+                  'success'
+                );
+
+                load();
+              } catch (err) {
+                toast(err.message, 'error');
+              }
+            });
+          });
+
+        } catch (err) {
+          content.innerHTML = `
+            <div class="empty">
+              <div class="icon">⚠️</div>
+              <h3>${escHTML(err.message)}</h3>
+            </div>
+          `;
+        }
+      };
+
+      safeOn(
+        $('#add-recurring'),
+        'click',
+        () => openRecurringModal()
+      );
+
+      safeOn(
+        $('#generate-recurring'),
+        'click',
+        async () => {
+          try {
+            const result = await API.recurring.generate();
+
+            toast(
+              `${result.generated} expense${result.generated === 1 ? '' : 's'} generated`,
+              'success'
+            );
+
+            load();
+          } catch (err) {
+            toast(err.message, 'error');
+          }
+        }
+      );
+
+      load();
+    },
+    // ================================================================
+    // ADVANCED CHARTS
+    // ================================================================
+    async charts() {
+      const root = $('#view-charts');
+      if (!root) return;
+
+      root.innerHTML = `
+    <div class="card" style="margin-bottom:20px">
+      <div class="toolbar">
+        <div>
+          <div class="card-title">📊 Advanced Charts</div>
+          <div class="muted">
+            Deeper analysis of your spending patterns.
+          </div>
+        </div>
+
+        <div class="spacer"></div>
+
+        <button class="btn btn-sm" id="refresh-advanced-charts">
+          ↻ Refresh
+        </button>
+      </div>
+    </div>
+
+    <div id="advanced-charts-content">
+      <div class="card">${skeleton(5)}</div>
+    </div>
+  `;
+
+      const load = async () => {
+        const content = $('#advanced-charts-content');
+        if (!content) return;
+
+        content.innerHTML = `
+      <div class="card">${skeleton(6)}</div>
+    `;
+
+        try {
+          const now = new Date();
+
+          const start = new Date(
+            now.getFullYear(),
+            now.getMonth() - 11,
+            1
+          );
+
+          const from = start.toISOString().slice(0, 10);
+          const to = now.toISOString().slice(0, 10);
+
+          const expenses = await API.expenses.list({
+            from,
+            to,
+            limit: 10000
+          });
+
+          if (!expenses.length) {
+            content.innerHTML = `
+          <div class="empty">
+            <div class="icon">📊</div>
+            <h3>Not enough data yet</h3>
+            <p>Add some expenses and your advanced charts will appear here.</p>
+          </div>
+        `;
+            return;
+          }
+
+          // ------------------------------------------------------------
+          // 1. Monthly spending
+          // ------------------------------------------------------------
+
+          const monthly = {};
+
+          expenses.forEach((e) => {
+            const month = String(e.date).slice(0, 7);
+            monthly[month] = (monthly[month] || 0) + Number(e.amount || 0);
+          });
+
+          const months = [];
+
+          for (let i = 11; i >= 0; i--) {
+            const d = new Date(
+              now.getFullYear(),
+              now.getMonth() - i,
+              1
+            );
+
+            const key = d.toISOString().slice(0, 7);
+
+            months.push({
+              key,
+              label: d.toLocaleDateString(undefined, {
+                month: 'short',
+                year: 'numeric'
+              }),
+              total: monthly[key] || 0
+            });
+          }
+
+          // ------------------------------------------------------------
+          // 2. Category spending
+          // ------------------------------------------------------------
+
+          const categories = {};
+
+          expenses.forEach((e) => {
+            const name = e.category_name || 'Uncategorized';
+
+            categories[name] =
+              (categories[name] || 0) +
+              Number(e.amount || 0);
+          });
+
+          const categoryRows = Object.entries(categories)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+
+          // ------------------------------------------------------------
+          // 3. Day of week spending
+          // ------------------------------------------------------------
+
+          const weekdayTotals = [
+            0, 0, 0, 0, 0, 0, 0
+          ];
+
+          expenses.forEach((e) => {
+            const d = new Date(`${e.date}T00:00:00`);
+            weekdayTotals[d.getDay()] += Number(e.amount || 0);
+          });
+
+          const weekdayLabels = [
+            'Sunday',
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+            'Friday',
+            'Saturday'
+          ];
+
+          // ------------------------------------------------------------
+          // 4. Largest expenses
+          // ------------------------------------------------------------
+
+          const largest = [...expenses]
+            .sort(
+              (a, b) =>
+                Number(b.amount || 0) -
+                Number(a.amount || 0)
+            )
+            .slice(0, 10);
+
+          content.innerHTML = `
+        <div class="charts-grid">
+
+          <div class="card">
+            <div class="card-title">
+              📈 Spending trend — last 12 months
+            </div>
+
+            <div class="chart-host">
+              <canvas id="advanced-monthly-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              🏷️ Spending by category
+            </div>
+
+            <div class="chart-host">
+              <canvas id="advanced-category-chart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <div
+          class="charts-grid"
+          style="margin-top:20px"
+        >
+
+          <div class="card">
+            <div class="card-title">
+              📅 Spending by day of week
+            </div>
+
+            <div class="chart-host">
+              <canvas id="advanced-weekday-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              💸 Largest expenses
+            </div>
+
+            <div class="chart-host">
+              <canvas id="advanced-largest-chart"></canvas>
+            </div>
+          </div>
+
+        </div>
+      `;
+
+          // ------------------------------------------------------------
+          // Monthly trend
+          // ------------------------------------------------------------
+
+          createChart(
+            $('#advanced-monthly-chart'),
+            {
+              type: 'line',
+
+              data: {
+                labels: months.map((m) => m.label),
+
+                datasets: [{
+                  label: 'Monthly spending',
+
+                  data: months.map((m) => m.total),
+
+                  borderColor: '#6366f1',
+
+                  backgroundColor: 'rgba(99,102,241,.12)',
+
+                  fill: true,
+
+                  tension: 0.35,
+
+                  pointRadius: 4,
+
+                  pointHoverRadius: 7,
+
+                  borderWidth: 3
+                }]
+              },
+
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                interaction: {
+                  intersect: false,
+                  mode: 'index'
+                },
+
+                plugins: {
+                  legend: {
+                    position: 'top',
+                    align: 'end'
+                  }
+                },
+
+                scales: {
+                  y: {
+                    beginAtZero: true,
+
+                    ticks: {
+                      callback: (value) =>
+                        fmtMoney(value)
+                    }
+                  }
+                }
+              }
+            }
+          );
+
+          // ------------------------------------------------------------
+          // Categories
+          // ------------------------------------------------------------
+
+          createChart(
+            $('#advanced-category-chart'),
+            {
+              type: 'bar',
+
+              data: {
+                labels: categoryRows.map(
+                  ([name]) => name
+                ),
+
+                datasets: [{
+                  label: 'Spending',
+
+                  data: categoryRows.map(
+                    ([, total]) => total
+                  ),
+
+                  backgroundColor: '#8b5cf6',
+
+                  borderRadius: 8
+                }]
+              },
+
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                indexAxis: 'y',
+
+                plugins: {
+                  legend: {
+                    display: false
+                  }
+                },
+
+                scales: {
+                  x: {
+                    beginAtZero: true,
+
+                    ticks: {
+                      callback: (value) =>
+                        fmtMoney(value)
+                    }
+                  }
+                }
+              }
+            }
+          );
+
+          // ------------------------------------------------------------
+          // Weekdays
+          // ------------------------------------------------------------
+
+          createChart(
+            $('#advanced-weekday-chart'),
+            {
+              type: 'bar',
+
+              data: {
+                labels: weekdayLabels,
+
+                datasets: [{
+                  label: 'Spending',
+
+                  data: weekdayTotals,
+
+                  backgroundColor: '#ec4899',
+
+                  borderRadius: 8
+                }]
+              },
+
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                  legend: {
+                    display: false
+                  }
+                },
+
+                scales: {
+                  y: {
+                    beginAtZero: true,
+
+                    ticks: {
+                      callback: (value) =>
+                        fmtMoney(value)
+                    }
+                  }
+                }
+              }
+            }
+          );
+
+          // ------------------------------------------------------------
+          // Largest expenses
+          // ------------------------------------------------------------
+
+          createChart(
+            $('#advanced-largest-chart'),
+            {
+              type: 'bar',
+
+              data: {
+                labels: largest.map(
+                  (e) =>
+                    `${e.date} — ${e.description}`
+                ),
+
+                datasets: [{
+                  label: 'Amount',
+
+                  data: largest.map(
+                    (e) => Number(e.amount || 0)
+                  ),
+
+                  backgroundColor: '#f59e0b',
+
+                  borderRadius: 8
+                }]
+              },
+
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                indexAxis: 'y',
+
+                plugins: {
+                  legend: {
+                    display: false
+                  }
+                },
+
+                scales: {
+                  x: {
+                    beginAtZero: true,
+
+                    ticks: {
+                      callback: (value) =>
+                        fmtMoney(value)
+                    }
+                  }
+                }
+              }
+            }
+          );
+
+        } catch (err) {
+          content.innerHTML = `
+        <div class="empty">
+          <div class="icon">⚠️</div>
+          <h3>${escHTML(err.message)}</h3>
+        </div>
+      `;
+        }
+      };
+
+      safeOn(
+        $('#refresh-advanced-charts'),
+        'click',
+        load
+      );
+
+      load();
+    },
     // ---------- DASHBOARD ----------
     async dashboard() {
       const root = $('#view-dashboard');
@@ -639,14 +1491,14 @@
                 ${summary.budget ? `
                   <div class="progress"><div class="progress-bar ${budgetCls}" style="width:${Math.min(budgetPct, 100)}%"></div></div>
                   <div class="stat-sub">${budgetPct.toFixed(0)}% of ${fmtMoney(summary.budget)} used</div>`
-                : '<div class="stat-sub">No budget set · <a href="#budget" onclick="setTimeout(()=>location.hash=\'budget\',10)">Set one →</a></div>'}
+              : '<div class="stat-sub">No budget set · <a href="#budget" onclick="setTimeout(()=>location.hash=\'budget\',10)">Set one →</a></div>'}
               </div>
 
               <div class="stat-card warning">
                 <div class="stat-icon">🏆</div>
                 <div class="stat-label">Top category</div>
                 <div class="stat-value" style="font-size:20px">${top ? escHTML(top.category) : '—'}</div>
-                <div class="stat-sub">${top ? `${fmtMoney(top.total)} · ${summary.total ? ((top.total/summary.total)*100).toFixed(0) : 0}% of total` : 'No spending yet'}</div>
+                <div class="stat-sub">${top ? `${fmtMoney(top.total)} · ${summary.total ? ((top.total / summary.total) * 100).toFixed(0) : 0}% of total` : 'No spending yet'}</div>
               </div>
 
               <div class="stat-card info">
@@ -768,14 +1620,14 @@
         const list = $('#expense-list');
         if (!list) return;
         const params = {};
-        const q   = $('#search-q')?.value.trim();
+        const q = $('#search-q')?.value.trim();
         const from = $('#filter-from')?.value;
-        const to   = $('#filter-to')?.value;
-        const cat  = $('#filter-cat')?.value;
-        if (q)    params.q = q;
+        const to = $('#filter-to')?.value;
+        const cat = $('#filter-cat')?.value;
+        if (q) params.q = q;
         if (from) params.from = from;
-        if (to)   params.to   = to;
-        if (cat)  params.category_id = cat;
+        if (to) params.to = to;
+        if (cat) params.category_id = cat;
 
         list.innerHTML = `<div class="card">${skeleton(6)}</div>`;
         try {
@@ -815,19 +1667,19 @@
         const fromEl = $('#filter-from'), toEl = $('#filter-to');
         if (!fromEl || !toEl) return;
         const r = c.dataset.range;
-        if      (r === '7')   { fromEl.value = daysAgo(7);  toEl.value = today(); }
-        else if (r === '30')  { fromEl.value = daysAgo(30); toEl.value = today(); }
+        if (r === '7') { fromEl.value = daysAgo(7); toEl.value = today(); }
+        else if (r === '30') { fromEl.value = daysAgo(30); toEl.value = today(); }
         else if (r === 'month') {
           const d = new Date();
-          fromEl.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
-          toEl.value   = today();
+          fromEl.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+          toEl.value = today();
         }
         else if (r === 'last-month') {
           const d = new Date(); d.setMonth(d.getMonth() - 1);
           const y = d.getFullYear(), m = d.getMonth();
-          const lastDay = new Date(y, m+1, 0).getDate();
-          fromEl.value = `${y}-${String(m+1).padStart(2,'0')}-01`;
-          toEl.value   = `${y}-${String(m+1).padStart(2,'0')}-${lastDay}`;
+          const lastDay = new Date(y, m + 1, 0).getDate();
+          fromEl.value = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+          toEl.value = `${y}-${String(m + 1).padStart(2, '0')}-${lastDay}`;
         }
         else { fromEl.value = ''; toEl.value = ''; }
         load();
@@ -836,8 +1688,8 @@
       let searchTimer;
       safeOn($('#search-q'), 'input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(load, 250); });
       safeOn($('#filter-from'), 'change', load);
-      safeOn($('#filter-to'),   'change', load);
-      safeOn($('#filter-cat'),  'change', load);
+      safeOn($('#filter-to'), 'change', load);
+      safeOn($('#filter-cat'), 'change', load);
 
       safeOn($('#add-expense'), 'click', async () => {
         if (!state.categories.length) await refreshCategories();
@@ -879,7 +1731,7 @@
         try {
           const summary = await API.reports.summary(state.selectedMonth);
           (summary.by_category || []).forEach((c) => { monthSpend[c.category_id] = c.total; });
-        } catch (_) {}
+        } catch (_) { }
 
         grid.innerHTML = filtered.map((c) => `
           <div class="cat-card" style="--cat-color:${escHTML(c.color)}">
@@ -969,7 +1821,7 @@
           }
 
           // Build a "daily spend" mini-line chart
-          const dailyRes = await API.expenses.list({ from: state.selectedMonth + '-01', to: today().slice(0,7) === state.selectedMonth ? today() : state.selectedMonth + '-31', limit: 500 }).catch(() => []);
+          const dailyRes = await API.expenses.list({ from: state.selectedMonth + '-01', to: today().slice(0, 7) === state.selectedMonth ? today() : state.selectedMonth + '-31', limit: 500 }).catch(() => []);
           const byDay = {};
           dailyRes.forEach((e) => { byDay[e.date] = (byDay[e.date] || 0) + e.amount; });
           const days = Object.keys(byDay).sort();
@@ -1039,8 +1891,8 @@
                       <td><span class="category-pill"><span class="category-dot" style="background:${palette[i]}"></span>${escHTML(c.category)}</span></td>
                       <td class="numeric">${c.count}</td>
                       <td class="numeric"><strong>${fmtMoney(c.total)}</strong></td>
-                      <td><div class="progress" style="margin:0"><div class="progress-bar" style="width:${(c.total/r.total*100).toFixed(1)}%;background:${palette[i]}"></div></div></td>
-                      <td class="numeric">${((c.total/r.total)*100).toFixed(1)}%</td>
+                      <td><div class="progress" style="margin:0"><div class="progress-bar" style="width:${(c.total / r.total * 100).toFixed(1)}%;background:${palette[i]}"></div></div></td>
+                      <td class="numeric">${((c.total / r.total) * 100).toFixed(1)}%</td>
                     </tr>`).join('')}
                   </tbody>
                 </table></div>`}
@@ -1200,8 +2052,8 @@
                   </div>
                   <div class="muted" style="text-align:center">
                     ${pct > 100
-                      ? `🚨 Over budget by <strong>${fmtMoney(summary.total - b.amount)}</strong>`
-                      : `You have <strong>${fmtMoney(summary.budget_remaining)}</strong> left to spend`}
+                ? `🚨 Over budget by <strong>${fmtMoney(summary.total - b.amount)}</strong>`
+                : `You have <strong>${fmtMoney(summary.budget_remaining)}</strong> left to spend`}
                   </div>
                 </div>
               </div>`;
@@ -1353,17 +2205,17 @@
   // -----------------------------------------------------------------------
   function openCommandPalette() {
     const items = [
-      { label: 'Dashboard',          icon: '📊', shortcut: 'G D', action: () => navigate('dashboard') },
-      { label: 'Expenses',           icon: '📋', shortcut: 'G E', action: () => navigate('expenses') },
-      { label: 'Categories',         icon: '🏷️', shortcut: 'G C', action: () => navigate('categories') },
-      { label: 'Reports',            icon: '📈', shortcut: 'G R', action: () => navigate('reports') },
-      { label: 'Budget',             icon: '🎯', shortcut: 'G B', action: () => navigate('budget') },
-      { label: 'New expense',        icon: '➕', shortcut: 'N',   action: () => openExpenseModal(null, () => renderers[currentView]?.()) },
-      { label: 'Quick add category', icon: '⚡', shortcut: '',    action: () => { $('#fab-quick')?.click(); } },
-      { label: 'Export CSV',         icon: '⬇️', shortcut: '',    action: () => { window.location.href = '/api/export.csv'; } },
-      { label: 'Export chart (PNG)', icon: '📷', shortcut: '',    action: () => { $('#export-png')?.click(); } },
-      { label: 'Toggle dark mode',   icon: '🌙', shortcut: '',    action: () => $('#theme-toggle')?.click() },
-      { label: 'Keyboard shortcuts', icon: '⌨️', shortcut: '?',   action: () => openShortcutHelp() },
+      { label: 'Dashboard', icon: '📊', shortcut: 'G D', action: () => navigate('dashboard') },
+      { label: 'Expenses', icon: '📋', shortcut: 'G E', action: () => navigate('expenses') },
+      { label: 'Categories', icon: '🏷️', shortcut: 'G C', action: () => navigate('categories') },
+      { label: 'Reports', icon: '📈', shortcut: 'G R', action: () => navigate('reports') },
+      { label: 'Budget', icon: '🎯', shortcut: 'G B', action: () => navigate('budget') },
+      { label: 'New expense', icon: '➕', shortcut: 'N', action: () => openExpenseModal(null, () => renderers[currentView]?.()) },
+      { label: 'Quick add category', icon: '⚡', shortcut: '', action: () => { $('#fab-quick')?.click(); } },
+      { label: 'Export CSV', icon: '⬇️', shortcut: '', action: () => { window.location.href = '/api/export.csv'; } },
+      { label: 'Export chart (PNG)', icon: '📷', shortcut: '', action: () => { $('#export-png')?.click(); } },
+      { label: 'Toggle dark mode', icon: '🌙', shortcut: '', action: () => $('#theme-toggle')?.click() },
+      { label: 'Keyboard shortcuts', icon: '⌨️', shortcut: '?', action: () => openShortcutHelp() },
     ];
 
     openModal({
@@ -1420,7 +2272,7 @@
     openModal({
       title: '⌨️ Keyboard shortcuts',
       submitText: 'Got it',
-      onSubmit: () => {},
+      onSubmit: () => { },
       body: `
         <div class="table-wrap"><table class="table">
           <tr><td><kbd>Ctrl/⌘ K</kbd></td><td>Open command palette</td></tr>
@@ -1445,7 +2297,7 @@
     document.addEventListener('keydown', (e) => {
       const tag = (e.target.tagName || '').toUpperCase();
       const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable;
-      const hasMod  = e.metaKey || e.ctrlKey || e.altKey;
+      const hasMod = e.metaKey || e.ctrlKey || e.altKey;
 
       if (e.key === 'Escape') {
         const overlay = $('.modal-overlay');
@@ -1468,7 +2320,15 @@
       }
       if (gPressed) {
         gPressed = false; clearTimeout(gTimer);
-        const map = { d: 'dashboard', e: 'expenses', c: 'categories', r: 'reports', b: 'budget' };
+        const map = {
+          d: 'dashboard',
+          e: 'expenses',
+          c: 'categories',
+          r: 'reports',
+          b: 'budget',
+          x: 'recurring',
+          a: 'charts'
+        };
         const v = map[e.key.toLowerCase()];
         if (v) navigate(v);
       }
@@ -1558,9 +2418,9 @@
     });
 
   // Expose for debugging
-window.__app = {
-  state, navigate, renderers, refreshCategories,
-  chartInstances, applyChartDefaults, updateChartsTheme,
-  animateCount,
-};
+  window.__app = {
+    state, navigate, renderers, refreshCategories,
+    chartInstances, applyChartDefaults, updateChartsTheme,
+    animateCount,
+  };
 })();
