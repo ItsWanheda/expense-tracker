@@ -57,6 +57,9 @@
         <a href="#charts" class="nav-link" data-view="charts">
           <span class="nav-icon">📊</span><span>Advanced Charts</span>
         </a>
+        <a href="#wallets" class="nav-link" data-view="wallets">
+          <span class="nav-icon">💼</span><span>Wallets & Currency</span>
+        </a>
       </nav>
 
       <!-- Streak card in sidebar footer -->
@@ -68,7 +71,7 @@
             <div class="streak-label">day streak</div>
           </div>
         </div>
-        <a href="/api/export.csv" class="btn btn-ghost btn-sm">⬇️ Export CSV</a>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><a href="/api/export.csv" class="btn btn-ghost btn-sm">⬇️ CSV</a><a href="/api/export.json" class="btn btn-ghost btn-sm">🧩 JSON</a></div>
       </div>
     </aside>
 
@@ -91,6 +94,7 @@
       <section id="view-budget" class="view"></section>
       <section id="view-recurring" class="view"></section>
       <section id="view-charts" class="view"></section>
+      <section id="view-wallets" class="view"></section>
     </main>
   </div>
 
