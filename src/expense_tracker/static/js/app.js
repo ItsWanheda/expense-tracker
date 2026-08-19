@@ -104,6 +104,17 @@
       }
       return res.status === 204 ? null : res.json();
     },
+    wallets: {
+      list: () => API.req('/api/wallets'),
+      create: (data) => API.req('/api/wallets', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id, data) => API.req('/api/wallets/' + id, { method: 'PUT', body: JSON.stringify(data) }),
+      remove: (id) => API.req('/api/wallets/' + id, { method: 'DELETE' }),
+    },
+    currency: {
+      rates: () => API.req('/api/currencies/rates'),
+      convert: (amount, from, to) => API.req('/api/currencies/convert?' + new URLSearchParams({ amount, from, to })),
+      setRate: (data) => API.req('/api/currencies/rates', { method: 'POST', body: JSON.stringify(data) }),
+    },
     categories: {
       list: () => API.req('/api/categories'),
       create: (data) => API.req('/api/categories', { method: 'POST', body: JSON.stringify(data) }),
@@ -365,10 +376,14 @@
     'reports',
     'budget',
     'recurring',
-    'charts'
+    'charts',
+    'wallets'
   ];
   const state = {
     categories: [],
+    wallets: [],
+    selectedWallet: null,
+    selectedCurrency: 'USD',
     selectedMonth: curMonth(),
     recentCategories: [],   // most-used category ids (for quick add)
     streak: 0,
@@ -480,6 +495,16 @@
             <input type="date" name="date" required value="${expense?.date || today()}">
           </div>
           <div class="form-row">
+            <label>Wallet</label>
+            <select name="wallet_id">
+              ${(state.wallets || []).map((w) => `<option value="${w.id}" ${String(expense?.wallet_id ?? state.selectedWallet ?? 1) === String(w.id) ? 'selected' : ''}>${escHTML(w.name)} (${escHTML(w.currency)})</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Currency</label>
+            <input name="currency" maxlength="3" value="${escHTML(expense?.currency || state.wallets.find(w => String(w.id) === String(expense?.wallet_id ?? state.selectedWallet ?? 1))?.currency || 'USD')}" style="text-transform:uppercase">
+          </div>
+          <div class="form-row">
             <label>Category</label>
             <select name="category_id">
               <option value="">— None —</option>
@@ -496,6 +521,14 @@
         onSaved?.();
       },
     });
+  }
+
+  async function refreshWallets() {
+    try {
+      state.wallets = await API.wallets.list();
+      if (!state.selectedWallet && state.wallets.length) state.selectedWallet = state.wallets[0].id;
+      if (!state.selectedCurrency && state.wallets.length) state.selectedCurrency = state.wallets[0].currency;
+    } catch (err) { console.error('[refreshWallets]', err); state.wallets = []; }
   }
 
   async function refreshCategories() {
@@ -636,6 +669,18 @@
       </div>
 
       <div class="form-row">
+        <label>Wallet</label>
+        <select name="wallet_id">
+          ${(state.wallets || []).map((w) => `<option value="${w.id}" ${String(existing?.wallet_id ?? state.selectedWallet ?? 1) === String(w.id) ? 'selected' : ''}>${escHTML(w.name)} (${escHTML(w.currency)})</option>`).join('')}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label>Currency</label>
+        <input name="currency" maxlength="3" value="${escHTML(existing?.currency || state.wallets.find(w => String(w.id) === String(existing?.wallet_id ?? state.selectedWallet ?? 1))?.currency || 'USD')}" style="text-transform:uppercase">
+      </div>
+
+      <div class="form-row">
         <label>Category</label>
         <select name="category_id">
           <option value="">No category</option>
@@ -721,6 +766,30 @@
   //  View renderers
   // -----------------------------------------------------------------------
   const renderers = {
+    // ================================================================
+    // WALLETS + CURRENCY
+    // ================================================================
+    async wallets() {
+      const root = $('#view-wallets');
+      if (!root) return;
+      await refreshWallets();
+      root.innerHTML = `
+        <div class="card">
+          <div class="toolbar"><div><div class="card-title">💼 Wallets</div><div class="muted">Separate cash, bank, travel and currency balances.</div></div><div class="spacer"></div><button class="btn btn-primary" id="add-wallet">+ Add wallet</button></div>
+          <div class="stat-grid" style="margin-top:18px">
+            ${(state.wallets || []).map(w => `<div class="stat-card"><div class="stat-label">${escHTML(w.name)}</div><div class="stat-value">${escHTML(w.currency)}</div><div class="muted">Wallet #${w.id}</div><div style="margin-top:10px"><button class="btn btn-sm btn-danger" data-delete-wallet="${w.id}" ${w.id === 1 ? 'disabled' : ''}>Delete</button></div></div>`).join('')}
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <div class="card-title">💱 Currency rates</div>
+          <div class="muted" style="margin-bottom:12px">Rates are cached locally and can be entered manually or resolved live when a pair is missing.</div>
+          <div id="wallet-rates" class="table-wrap">Loading rates…</div>
+        </div>`;
+      safeOn($('#add-wallet'), 'click', () => openModal({ title:'New wallet', body:`<div class="form-row"><label>Name</label><input name="name" required placeholder="Travel Wallet"></div><div class="form-row"><label>Currency</label><input name="currency" value="USD" maxlength="3" required></div>`, onSubmit: async d => { await API.wallets.create({name:d.name,currency:d.currency.toUpperCase()}); toast('Wallet created','success'); renderers.wallets(); }}));
+      $$('[data-delete-wallet]').forEach(b => safeOn(b,'click',async()=>{ try { await API.wallets.remove(Number(b.dataset.deleteWallet)); toast('Wallet deleted','success'); renderers.wallets(); } catch(e){ toast(e.message,'error'); }}));
+      try { const rates=await API.currency.rates(); $('#wallet-rates').innerHTML = rates.length ? rates.map(r=>`<div style="padding:8px 0">1 ${escHTML(r.base_currency)} = <strong>${Number(r.rate).toFixed(6)}</strong> ${escHTML(r.quote_currency)} <span class="muted">· ${escHTML(r.updated_at)}</span></div>`).join('') : '<div class="empty">No cached rates yet.</div>'; } catch(e){ $('#wallet-rates').textContent=e.message; }
+    },
+
     // ================================================================
     // RECURRING EXPENSES
     // ================================================================
@@ -2214,6 +2283,8 @@
       { label: 'Quick add category', icon: '⚡', shortcut: '', action: () => { $('#fab-quick')?.click(); } },
       { label: 'Export CSV', icon: '⬇️', shortcut: '', action: () => { window.location.href = '/api/export.csv'; } },
       { label: 'Export chart (PNG)', icon: '📷', shortcut: '', action: () => { $('#export-png')?.click(); } },
+      { label: 'Wallets & Currency', icon: '💼', shortcut: 'G W', action: () => navigate('wallets') },
+      { label: 'Export JSON', icon: '🧩', shortcut: '', action: () => { window.location.href = '/api/export.json'; } },
       { label: 'Toggle dark mode', icon: '🌙', shortcut: '', action: () => $('#theme-toggle')?.click() },
       { label: 'Keyboard shortcuts', icon: '⌨️', shortcut: '?', action: () => openShortcutHelp() },
     ];
@@ -2327,7 +2398,8 @@
           r: 'reports',
           b: 'budget',
           x: 'recurring',
-          a: 'charts'
+          a: 'charts',
+          w: 'wallets'
         };
         const v = map[e.key.toLowerCase()];
         if (v) navigate(v);
@@ -2410,7 +2482,8 @@
   //  Boot
   // -----------------------------------------------------------------------
   applyChartDefaults();
-  refreshCategories()
+  refreshWallets()
+    .then(() => refreshCategories())
     .catch((err) => console.error('[boot] refreshCategories', err))
     .finally(() => {
       try { navigate(location.hash.slice(1) || 'dashboard'); }
