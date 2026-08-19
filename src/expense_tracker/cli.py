@@ -20,7 +20,7 @@ console = Console()
 
 
 @click.group()
-@click.version_option(version="0.3.0")
+@click.version_option(version="0.4.0")
 def cli():
     """Expense Tracker — manage your daily expenses from the CLI."""
 
