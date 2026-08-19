@@ -9,6 +9,10 @@ from dataclasses import asdict, dataclass
 from datetime import date as date_cls
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import json
+import urllib.error
+import urllib.parse
+import urllib.request
 
 from .database import get_connection
 
@@ -23,6 +27,9 @@ class Expense:
     description: str
     date: str  # ISO YYYY-MM-DD
     category_id: Optional[int] = None
+    wallet_id: int = 1
+    wallet_name: Optional[str] = None
+    currency: str = "USD"
     category_name: Optional[str] = None
     category_color: Optional[str] = None
     id: Optional[int] = None
@@ -198,6 +205,9 @@ class ExpenseRepository:
             e.amount,
             e.description,
             e.category_id,
+            e.wallet_id,
+            w.name AS wallet_name,
+            e.currency,
             e.date,
             e.created_at,
             e.updated_at,
@@ -206,6 +216,8 @@ class ExpenseRepository:
         FROM expenses e
         LEFT JOIN categories c
             ON e.category_id = c.id
+        LEFT JOIN wallets w
+            ON e.wallet_id = w.id
     """
 
     # ------------------------------------------------------------------------
@@ -220,13 +232,15 @@ class ExpenseRepository:
             cur = conn.execute(
                 """
                 INSERT INTO expenses
-                    (amount, description, category_id, date)
-                VALUES (?, ?, ?, ?)
+                    (amount, description, category_id, wallet_id, currency, date)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
                     expense.amount,
                     expense.description,
                     expense.category_id,
+                    expense.wallet_id,
+                    expense.currency.upper(),
                     expense.date,
                 ),
             )
@@ -268,6 +282,8 @@ class ExpenseRepository:
             "amount",
             "description",
             "category_id",
+            "wallet_id",
+            "currency",
             "date",
         }
 
@@ -328,6 +344,8 @@ class ExpenseRepository:
         category_id: Optional[int] = None,
         q: Optional[str] = None,
         limit: int = 100,
+        wallet_id: Optional[int] = None,
+        currency: Optional[str] = None,
     ) -> list[Expense]:
         """List expenses with optional filters."""
 
@@ -352,6 +370,14 @@ class ExpenseRepository:
             query += " AND e.category_id = ?"
 
             params.append(category_id)
+
+        if wallet_id is not None:
+            query += " AND e.wallet_id = ?"
+            params.append(wallet_id)
+
+        if currency:
+            query += " AND e.currency = ?"
+            params.append(currency.upper())
 
         if q:
 
@@ -585,6 +611,8 @@ class RecurringExpenseRepository:
         category_id: Optional[int] = None,
         frequency: str = "monthly",
         next_run: Optional[str] = None,
+        wallet_id: int = 1,
+        currency: str = "USD",
     ) -> int:
 
         amount = float(amount)
@@ -617,17 +645,21 @@ class RecurringExpenseRepository:
                         amount,
                         description,
                         category_id,
+                        wallet_id,
+                        currency,
                         frequency,
                         next_run,
                         anchor_day,
                         active
                     )
-                VALUES (?, ?, ?, ?, ?, ?, 1)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
                 """,
                 (
                     amount,
                     description,
                     category_id,
+                    wallet_id,
+                    currency.upper(),
                     frequency,
                     parsed_date.isoformat(),
                     parsed_date.day,
@@ -655,6 +687,8 @@ class RecurringExpenseRepository:
                     r.amount,
                     r.description,
                     r.category_id,
+                    r.wallet_id,
+                    r.currency,
                     r.frequency,
                     r.next_run,
                     r.anchor_day,
@@ -689,6 +723,8 @@ class RecurringExpenseRepository:
                 r.amount,
                 r.description,
                 r.category_id,
+                r.wallet_id,
+                r.currency,
                 r.frequency,
                 r.next_run,
                 r.anchor_day,
@@ -736,6 +772,8 @@ class RecurringExpenseRepository:
             "amount",
             "description",
             "category_id",
+            "wallet_id",
+            "currency",
             "frequency",
             "next_run",
             "active",
@@ -887,14 +925,18 @@ class RecurringExpenseRepository:
                                 amount,
                                 description,
                                 category_id,
+                                wallet_id,
+                                currency,
                                 date
                             )
-                        VALUES (?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?)
                         """,
                         (
                             row["amount"],
                             row["description"],
                             row["category_id"],
+                            row["wallet_id"],
+                            row["currency"],
                             next_run.isoformat(),
                         ),
                     )
@@ -924,3 +966,292 @@ class RecurringExpenseRepository:
                 )
 
         return generated
+
+
+# ============================================================================
+# WALLETS & CURRENCY
+# ============================================================================
+
+
+class WalletRepository:
+    @staticmethod
+    def create(name: str, currency: str = "USD") -> int:
+        name = (name or "").strip()
+        currency = (currency or "USD").upper()
+        if not name:
+            raise ValueError("wallet name is required")
+        if len(currency) != 3:
+            raise ValueError("currency must be a 3-letter ISO code")
+        with get_connection() as conn:
+            cur = conn.execute(
+                "INSERT INTO wallets (name, currency) VALUES (?, ?)", (name, currency)
+            )
+            return cur.lastrowid
+
+    @staticmethod
+    def list_all() -> list[dict]:
+        with get_connection() as conn:
+            return [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT id, name, currency, created_at FROM wallets ORDER BY id"
+                ).fetchall()
+            ]
+
+    @staticmethod
+    def get(wallet_id: int) -> Optional[dict]:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT id, name, currency, created_at FROM wallets WHERE id = ?",
+                (wallet_id,),
+            ).fetchone()
+            return dict(row) if row else None
+
+    @staticmethod
+    def update(
+        wallet_id: int, name: Optional[str] = None, currency: Optional[str] = None
+    ) -> bool:
+        fields, values = [], []
+        if name is not None:
+            fields.append("name = ?")
+            values.append(name.strip())
+        if currency is not None:
+            fields.append("currency = ?")
+            values.append(currency.upper())
+        if not fields:
+            return False
+        values.append(wallet_id)
+        with get_connection() as conn:
+            cur = conn.execute(
+                f"UPDATE wallets SET {', '.join(fields)} WHERE id = ?", values
+            )
+            return cur.rowcount > 0
+
+    @staticmethod
+    def delete(wallet_id: int) -> bool:
+        if wallet_id == 1:
+            raise ValueError("the Main Wallet cannot be deleted")
+        with get_connection() as conn:
+            cur = conn.execute("DELETE FROM wallets WHERE id = ?", (wallet_id,))
+            return cur.rowcount > 0
+
+
+class CurrencyRepository:
+    COMMON = (
+        "USD",
+        "EUR",
+        "GBP",
+        "AZN",
+        "JPY",
+        "CAD",
+        "AUD",
+        "CHF",
+        "CNY",
+        "TRY",
+        "INR",
+    )
+
+    @staticmethod
+    def set_rate(base: str, quote: str, rate: float) -> None:
+        base, quote, rate = base.upper(), quote.upper(), float(rate)
+        if rate <= 0 or len(base) != 3 or len(quote) != 3:
+            raise ValueError("invalid currency or rate")
+        with get_connection() as conn:
+            conn.execute(
+                """INSERT INTO currency_rates(base_currency, quote_currency, rate, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(base_currency, quote_currency) DO UPDATE SET rate=excluded.rate, updated_at=CURRENT_TIMESTAMP""",
+                (base, quote, rate),
+            )
+
+
+    @classmethod
+    def get_rate(cls, base: str, quote: str) -> float:
+        """
+        Resolve a currency conversion rate.
+
+        Resolution order:
+        1. Same currency -> 1.0
+        2. Cached direct rate
+        3. Cached inverse rate
+        4. Live Frankfurter API
+        5. Cache the live rate
+
+        No third-party Python dependency is required.
+        """
+
+        base = (base or "").strip().upper()
+        quote = (quote or "").strip().upper()
+
+        if len(base) != 3 or len(quote) != 3:
+            raise ValueError(
+                "Currency codes must be 3-letter ISO codes."
+            )
+
+        if base == quote:
+            return 1.0
+
+    # ==============================================================
+    # 1. Check cached direct rate
+    # ==============================================================
+        with get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT rate
+                FROM currency_rates
+                WHERE base_currency = ?
+                  AND quote_currency = ?
+                LIMIT 1
+                """,
+                (base, quote),
+            ).fetchone()
+
+            if row is not None:
+                rate = float(row["rate"])
+
+                if rate > 0:
+                    return rate
+
+        # ==========================================================
+        # 2. Check cached inverse rate
+        # ==========================================================
+            row = conn.execute(
+                """
+                SELECT rate
+                FROM currency_rates
+             WHERE base_currency = ?
+                AND quote_currency = ?
+                LIMIT 1
+                """,
+                (quote, base),
+            ).fetchone()
+
+            if row is not None:
+                inverse_rate = float(row["rate"])
+
+                if inverse_rate > 0:
+                    return 1.0 / inverse_rate
+
+    # ==============================================================
+    # 3. Resolve live rate
+    #
+    # Frankfurter API v2:
+    #
+    # https://api.frankfurter.dev/v2/rate/USD/EUR
+    # ==============================================================
+        encoded_base = urllib.parse.quote(base)
+        encoded_quote = urllib.parse.quote(quote)
+
+        url = (
+            "https://api.frankfurter.dev/v2/rate/"
+            f"{encoded_base}/{encoded_quote}"
+        )
+
+        request = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "ExpenseTracker/1.0",
+            },
+            method="GET",
+        )
+
+        try:
+            with urllib.request.urlopen(
+                request,
+                timeout=10,
+            ) as response:
+
+                if response.status != 200:
+                    raise ValueError(
+                        f"Currency API returned HTTP "
+                        f"{response.status}."
+                    )
+
+                raw_data = response.read().decode("utf-8")
+
+            data = json.loads(raw_data)
+
+        except urllib.error.HTTPError as exc:
+
+            if exc.code == 404:
+                raise ValueError(
+                    f"No currency rate found for "
+                    f"{base} -> {quote}."
+                ) from exc
+
+            raise ValueError(
+                f"Currency API returned HTTP "
+                f"{exc.code} for {base} -> {quote}."
+            ) from exc
+
+        except urllib.error.URLError as exc:
+
+            raise ValueError(
+                f"Could not reach the currency API "
+                f"for {base} -> {quote}: {exc.reason}"
+            ) from exc
+
+        except TimeoutError as exc:
+
+            raise ValueError(
+                f"Currency API request timed out "
+                f"for {base} -> {quote}."
+            ) from exc
+
+        except json.JSONDecodeError as exc:
+
+            raise ValueError(
+                f"Currency API returned invalid JSON "
+                f"for {base} -> {quote}."
+            ) from exc
+
+    # ==============================================================
+    # 4. Read the v2 response
+    # ==============================================================
+        rate = data.get("rate")
+
+        if rate is None:
+            raise ValueError(
+                f"Currency API did not return a rate "
+                f"for {base} -> {quote}."
+            )
+
+        try:
+            rate = float(rate)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"Invalid currency rate returned for "
+                f"{base} -> {quote}: {rate!r}"
+            ) from exc
+
+        if rate <= 0:
+            raise ValueError(
+                f"Invalid currency rate returned for "
+                f"{base} -> {quote}: {rate}"
+            )
+
+    # ==============================================================
+    # 5. Cache the successful rate
+    # ==============================================================
+        cls.set_rate(
+            base,
+            quote,
+            rate,
+        )
+
+        return rate
+
+    @staticmethod
+    def convert(amount: float, base: str, quote: str) -> float:
+        return float(amount) * CurrencyRepository.get_rate(base, quote)
+
+    @staticmethod
+    def list_rates() -> list[dict]:
+        with get_connection() as conn:
+            return [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT base_currency, quote_currency, rate, updated_at FROM currency_rates ORDER BY base_currency, quote_currency"
+                ).fetchall()
+            ]
