@@ -2,7 +2,9 @@
 
 # 💸 Expense Tracker
 
-### A modern expense management application built with Python, Flask, SQLite and Rich.
+### A modern, feature-rich Python expense tracker with a CLI, interactive REPL, Flask web dashboard, SQLite storage, recurring expenses, budgets, multiple wallets, multi-currency support, currency conversion, reporting, and JSON import/export.
+
+Built to be simple enough for the terminal while providing a full web interface for day-to-day expense management.
 
 Track your spending from the **terminal** or through a **beautiful responsive web dashboard**.
 
@@ -106,6 +108,8 @@ Per-category budgets
 
 # ✨ Features
 
+# ✨ Features
+
 ## Core
 - ➕ **Add / Edit / Delete** expenses with description, amount, date, and category
 - 🏷️ **Manage categories** — create custom ones with your own colors
@@ -120,13 +124,75 @@ Per-category budgets
 - 📈 **Visualize** spending as a horizontal bar chart (PNG via matplotlib)
 - 🧪 **Fully tested** with pytest (6 tests, all passing)
 
-## 🌐 Web Interface (`0.2.0+`)
+## 🌐 Web Interface
 - 🖥️ **Single-page application** — Dashboard, Expenses, Categories, Reports, Budget
 - 📊 **Interactive charts** powered by Chart.js (bar + doughnut)
 - 🎯 **Per-category budget management** with progress bars
-- 🪟 **Modal forms** with validation and toast notifications
+- 📈 **Modal forms** with validation and toast notifications
 - 📱 **Responsive layout** — works on phone, tablet, desktop
 - 🔄 **Same SQLite database** — CLI and web share data seamlessly
+
+## 💸 Expense Management
+- Add, edit, delete, and list expenses
+- Expense descriptions and amounts
+- Date-based expense tracking
+- Category support
+- Search and filtering
+- Monthly expense summaries
+- CSV export
+- Wallet assignment
+- Per-expense currency support
+
+## 👛 Multiple Wallets
+Manage expenses across multiple wallets/accounts.
+- Create multiple wallets
+- Assign a currency to each wallet
+- Assign expenses to specific wallets
+- Update wallet names and currencies
+- Delete wallets
+- View wallet-specific information
+- Default Main Wallet for existing installations
+
+## 💱 Multi-Currency Support
+Track expenses and wallets using different currencies.
+- Multiple currency codes per wallet and expense
+- Cached exchange rates
+- Manual exchange-rate entry
+- Live rate resolution when a pair is missing
+- Currency conversion
+- Inverse-rate fallback
+- Currency rate API endpoints
+- Currency-aware CSV exports
+
+## 🐚 Interactive REPL
+Use the application through an interactive shell instead of launching a new command for every action.
+
+```bash
+py -m expense_tracker.cli shell
+```
+
+Example:
+
+```text
+Expense Tracker Shell
+
+expense> list
+expense> add
+expense> summary
+expense> wallets list
+expense> currency show
+expense> exit
+```
+
+## 📦 JSON Import / Export
+Create portable backups and restore tracker data using JSON.
+
+```bash
+py -m expense_tracker.cli export-json -o backup.json
+py -m expense_tracker.cli import-json backup.json
+```
+
+JSON is useful for backups, migrations, testing, and moving data between installations.
 
 ---
 
@@ -241,7 +307,7 @@ py -m expense_tracker --version
 
 Expected output:
 ```
-0.2.0
+0.4.0
 ```
 
 ---
@@ -392,11 +458,54 @@ py -m expense_tracker export -o may.csv --from 2024-05-01 --to 2024-05-31
 
 The CSV has columns: `id, date, category, amount, description`.
 
+## Wallets
+
+```bash
+# List wallets
+py -m expense_tracker wallets list
+
+# Create a wallet
+py -m expense_tracker wallets add "Travel" --currency EUR
+```
+
+## Multi-Currency
+
+```bash
+# Show supported currencies
+py -m expense_tracker currency show
+
+# Convert between currencies
+py -m expense_tracker currency convert 100 USD EUR
+
+# Set a manual rate
+py -m expense_tracker currency rate EUR USD 1.17
+```
+
+Exchange rates are cached locally. When a requested pair is not available locally, the application can resolve it live and cache the result.
+
+## Interactive REPL
+
+```bash
+py -m expense_tracker shell
+```
+
+The REPL lets you run tracker commands interactively without restarting the CLI for every operation.
+
+## JSON Import / Export
+
+```bash
+# Export a portable backup
+py -m expense_tracker export-json -o backup.json
+
+# Restore from a backup
+py -m expense_tracker import-json backup.json
+```
+
 ---
 
 # 🌐 Web Interface
 
-**New in `0.2.0`.** A complete single-page application that talks to the same SQLite database as the CLI — every entry you add in the browser shows up in the terminal and vice-versa.
+**Available in the current release.** A complete single-page application that talks to the same SQLite database as the CLI — every entry you add in the browser shows up in the terminal and vice-versa.
 
 ## Start the server
 
@@ -423,6 +532,9 @@ flask run --debug
 | 🏷️ **Categories** | Grid of colored category cards with add/delete and a color picker |
 | 📈 **Reports** | Interactive bar + doughnut charts (Chart.js) plus a category breakdown table with Budget & Remaining columns when applicable |
 | 🎯 **Budget** | Manage overall **and** per-category budgets in one place, with per-category progress bars and an active-budgets table with Edit/Delete |
+| 👛 **Wallets** | Create, edit, delete, and manage multiple wallets |
+| 💱 **Currencies** | View rates, enter manual rates, and convert between currencies |
+| 🔄 **Recurring** | Manage recurring expenses and generate due entries |
 
 ## API
 
@@ -444,9 +556,20 @@ The web UI talks to a small JSON REST API. You can use it directly too:
 | `PUT` | `/api/budget` | Set/update a budget (`category_id` optional) 🆕 |
 | `DELETE` | `/api/budget?month=…&category_id=…` | Delete a budget 🆕 |
 | `GET` | `/api/export.csv` | Download CSV export |
+| `GET` | `/api/wallets` | List wallets |
+| `GET` | `/api/wallets/<id>` | Get a wallet |
+| `POST` | `/api/wallets` | Create a wallet |
+| `PUT` | `/api/wallets/<id>` | Update a wallet |
+| `DELETE` | `/api/wallets/<id>` | Delete a wallet |
+| `GET` | `/api/currencies` | List supported currencies |
+| `GET` | `/api/currencies/rates` | Get cached/resolved currency rates |
+| `GET` | `/api/currencies/rate` | Get one currency pair rate |
+| `POST` | `/api/currencies/rates` | Save a manual exchange rate |
+| `GET` | `/api/currencies/convert` | Convert an amount between currencies |
 
 Example with curl:
 
+```bash
 ```bash
 # Add an expense via the API
 curl -X POST http://127.0.0.1:5000/api/expenses \
@@ -460,6 +583,15 @@ curl http://127.0.0.1:5000/api/reports/summary
 curl -X PUT http://127.0.0.1:5000/api/budget \
      -H "Content-Type: application/json" \
      -d '{"month": "2026-06", "amount": 300, "category_id": 1}'
+
+# List wallets
+curl http://127.0.0.1:5000/api/wallets
+
+# Get currency rates
+curl http://127.0.0.1:5000/api/currencies/rates
+
+# Convert 100 USD to EUR
+curl "http://127.0.0.1:5000/api/currencies/convert?base=USD&quote=EUR&amount=100"
 ```
 
 > 🛡️ For **development only**. Don't expose `app.run()` to the internet — use `gunicorn 'expense_tracker.web:create_app()'` behind a reverse proxy in production.
@@ -498,6 +630,7 @@ This project follows a **layered architecture** that separates concerns cleanly:
 Cross-cutting:
   reports.py      → aggregation (used by CLI summary + web reports)
   visualization.py → matplotlib charts (CLI only)
+  wallets/currency  → shared wallet and exchange-rate repositories
 ```
 
 ## Why this structure?
@@ -719,6 +852,23 @@ cd src && py expense_tracker/web.py
 
 ---
 
+# 🏆 Current Release Highlights
+
+The current release includes:
+
+- 👛 Multiple wallets
+- 💱 Multi-currency expenses and wallets
+- 🔄 Cached and live currency-rate resolution
+- 💱 Currency conversion
+- 🐚 Interactive REPL mode
+- 📦 JSON import/export
+- 🔁 Recurring expenses
+- 📊 Advanced charts
+- 🌐 Flask web dashboard and REST API
+- 🎯 Overall and per-category budgets
+
+---
+
 # 🗺️ Roadmap
 
 Planned for future releases:
@@ -736,9 +886,10 @@ Planned for future releases:
 - [x] **Toast with Undo action** for accidental deletes ✅ ( 0.3.0)
 - [x] **Recurring expenses** (rent, subscriptions) ✅ ( 0.4.0)
 - [x] **Advanced Charts** ✅ ( 0.4.0)
-- [ ] **Multi-currency** support with conversion rates
-- [ ] **Interactive REPL mode** (`expense shell`)
-- [ ] **JSON import / export**
+- [x] **Multi-currency** support with cached/live conversion rates ✅ (`0.4.0`)
+- [x] **Interactive REPL mode** (`expense shell`) ✅ (`0.4.0`)
+- [x] **JSON import / export** ✅ (`0.4.0`)
+- [x] **Multiple Wallets** with wallet-level currencies and expense assignment ✅ (`0.4.0`)
 - [ ] **Telegram / Discord bot** integration
 - [ ] **GitHub Actions CI** (run tests on every push)
 - [ ] **Publish to PyPI** (`pip install expense-tracker`)
@@ -747,8 +898,6 @@ Planned for future releases:
 - [ ] **User Authentication**
 - [ ] **Cloud Sync**
 - [ ] **Notifications**
-- [ ] **Multiple Wallets**
-- [ ] **Multi-Currency Support**
 - [ ] **AI Spending Insights**
 - [ ] **Progressive Web App (PWA)**
 - [ ] **Docker Support**
