@@ -108,8 +108,6 @@ Per-category budgets
 
 # ✨ Features
 
-# ✨ Features
-
 ## Core
 - ➕ **Add / Edit / Delete** expenses with description, amount, date, and category
 - 🏷️ **Manage categories** — create custom ones with your own colors
