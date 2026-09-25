@@ -2,7 +2,7 @@
 
 # 💸 Expense Tracker
 
-### A modern, feature-rich Python expense tracker with a CLI, interactive REPL, Flask web dashboard, SQLite storage, recurring expenses, budgets, multiple wallets, multi-currency support, currency conversion, reporting, and JSON import/export.
+### A modern, feature-rich Python expense tracker with a CLI, interactive REPL, Flask web dashboard, SQLite storage, recurring expenses, budgets, multiple wallets, multi-currency support, financial intelligence, currency conversion, reporting, and JSON import/export.
 
 Built to be simple enough for the terminal while providing a full web interface for day-to-day expense management.
 
@@ -114,6 +114,7 @@ Per-category budgets
 - 🔍 **Filter & search** by date range and category
 - 💵 **Set monthly budgets** — overall *or* per-category
 - 📊 **Monthly summary** with totals, counts, percentages, and budget tracking
+- 🧠 **Financial intelligence** with 12-month trends, month-over-month changes, daily averages, active days, top categories, and top expenses
 - 📤 **Export to CSV** for spreadsheet analysis or backup
 - 🗄️ **Local SQLite** — no servers, no cloud, your data stays on your machine
 
@@ -549,6 +550,7 @@ The web UI talks to a small JSON REST API. You can use it directly too:
 | `PUT` | `/api/expenses/<id>` | Update expense (partial) |
 | `DELETE` | `/api/expenses/<id>` | Delete expense |
 | `GET` | `/api/reports/summary?month=YYYY-MM` | Monthly report (incl. `category_budgets`) |
+| `GET` | `/api/reports/intelligence?month=YYYY-MM&currency=USD` | Financial intelligence analytics |
 | `GET` | `/api/budget?month=…&category_id=…` | Get a single budget |
 | `GET` | `/api/budgets?month=YYYY-MM` | List all budgets for a month 🆕 |
 | `PUT` | `/api/budget` | Set/update a budget (`category_id` optional) 🆕 |
