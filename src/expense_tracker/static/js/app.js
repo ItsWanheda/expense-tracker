@@ -135,6 +135,11 @@
     reports: {
       summary: (month) => API.req('/api/reports/summary' + (month ? '?month=' + month : '')),
       heatmap: (year) => API.req('/api/reports/heatmap' + (year ? '?year=' + year : '')),
+      intelligence: (month, currency = 'USD', walletId = null) => {
+        const params = new URLSearchParams({ month, currency });
+        if (walletId != null) params.set('wallet_id', walletId);
+        return API.req('/api/reports/intelligence?' + params.toString());
+      },
     },
     budget: {
       get: (month) => API.req('/api/budget' + (month ? '?month=' + month : '')),
@@ -1506,12 +1511,13 @@
           <div class="card">${skeleton(4)}</div>`;
 
         try {
-          const [summary, recent, prevSummary, heatData, allRecent] = await Promise.all([
+          const [summary, recent, prevSummary, heatData, allRecent, intelligence] = await Promise.all([
             API.reports.summary(state.selectedMonth),
             API.expenses.list({ limit: 8 }),
             API.reports.summary(prevMonth(state.selectedMonth)).catch(() => null),
             API.reports.heatmap(curYear()).catch(() => ({ expenses: [] })),
             API.expenses.list({ limit: 30 }).catch(() => []),
+            API.reports.intelligence(state.selectedMonth, state.selectedCurrency).catch(() => null),
           ]);
 
           // Trend vs previous month
@@ -1539,7 +1545,16 @@
           // Insight banner
           const insight = makeInsight(summary, prevSummary, trend, streak, top);
 
+          const intelligenceCards = intelligence ? `
+            <div class="stat-grid">
+              <div class="stat-card info"><div class="stat-icon">📆</div><div class="stat-label">Daily average</div><div class="stat-value">${fmtMoney(intelligence.daily_average)}</div><div class="stat-sub">${intelligence.active_days} active spending days</div></div>
+              <div class="stat-card"><div class="stat-icon">🔢</div><div class="stat-label">Transactions</div><div class="stat-value">${intelligence.transaction_count}</div><div class="stat-sub">${intelligence.days_in_month}-day month</div></div>
+              <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-label">Month change</div><div class="stat-value">${intelligence.change_pct == null ? '—' : `${intelligence.change_pct >= 0 ? '+' : ''}${intelligence.change_pct.toFixed(1)}%`}</div><div class="stat-sub">vs ${intelligence.monthly_trend.at(-2)?.month || 'previous month'}</div></div>
+            </div>
+          ` : '';
+
           content.innerHTML = `
+            ${intelligenceCards}
             ${insight}
             <div class="stat-grid">
               <div class="stat-card">
