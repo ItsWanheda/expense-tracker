@@ -8,7 +8,9 @@ Built to be simple enough for the terminal while providing a full web interface 
 
 Track your spending from the **terminal** or through a **beautiful responsive web dashboard**.
 
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+> 🚀 **Current release line: v0.5.0 — Financial Intelligence**. The project extends the v0.4.x feature set with analytics, trends, comparisons, and dashboard intelligence while preserving the existing CLI, web, wallet, currency, budget, recurring-expense, and import/export workflows.
+
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite)
 ![License](https://img.shields.io/badge/License-MIT-success)
@@ -25,6 +27,14 @@ Track your spending from the **terminal** or through a **beautiful responsive we
 * [**🛠️ Tech Stack**](#️-tech-stack)
 * [**📁 Project Structure**](#-project-structure)
 * [**🚀 Installation**](#-installation)
+  * [Prerequisites](#prerequisites)
+  * [Windows — PowerShell](#windows--powershell)
+  * [macOS / Linux](#macos--linux)
+  * [Verify the Installation](#verify-the-installation)
+  * [First Run & Database](#first-run--database)
+  * [Optional Development Setup](#optional-development-setup)
+  * [Upgrading](#upgrading)
+  * [Deactivating the Virtual Environment](#deactivating-the-virtual-environment)
 * [**📖 CLI Usage**](#-cli-usage)
 * [**🌐 Web Interface**](#-web-interface)
 * [**🏛️ Architecture**](#️-architecture)
@@ -44,13 +54,13 @@ Track your spending from the **terminal** or through a **beautiful responsive we
 
 | | |
 |---|---|
-| 🐍 Language | Python |
-| 🌐 Web Framework | Flask |
+| 🐍 Language | Python 3.10+ |
+| 🌐 Web Framework | Flask 3.x |
 | 💾 Database | SQLite |
-| 🖥 Interface | CLI + Web |
+| 🖥 Interface | CLI + Interactive REPL + Web |
 | 📱 Responsive | ✅ |
 | 🧪 Tested | Pytest |
-| 📄 License | GPL-3.0 |
+| 📄 License | MIT |
 
 ---
 
@@ -163,6 +173,56 @@ Track expenses and wallets using different currencies.
 - Currency rate API endpoints
 - Currency-aware CSV exports
 
+## 🧠 Financial Intelligence — v0.5.0
+
+The v0.5.0 Financial Intelligence layer builds on the existing reporting system and adds a dedicated analytics view without removing or changing the existing summary workflow.
+
+### Included analytics
+
+- 📈 **12-month monthly trend** — view spending across the previous year
+- ↔️ **Month-over-month comparison** — compare the selected month with the previous month
+- 📊 **Absolute change** — see how much spending increased or decreased
+- 📐 **Percentage change** — understand the relative month-over-month movement
+- 📅 **Daily average** — average spending across the selected month
+- 🗓️ **Active spending days** — identify how many days contained transactions
+- 🏷️ **Top categories** — identify the largest spending categories
+- 💳 **Top expenses** — identify the largest individual transactions
+- 👛 **Wallet-aware analysis** — restrict analytics to a selected wallet
+- 💱 **Currency-aware analysis** — calculate analytics in a requested reporting currency
+- 🌐 **REST API** — consume intelligence data programmatically
+- 📊 **Dashboard metrics** — surface the most useful indicators directly on the web dashboard
+
+### API example
+
+```text
+GET /api/reports/intelligence?month=2026-06&currency=USD
+```
+
+Optional wallet filtering can be supplied with `wallet_id`.
+
+The endpoint is intentionally additive: the existing monthly summary API remains available and continues to provide the original report structure.
+
+### Example response shape
+
+```json
+{
+  "month": "2026-06",
+  "currency": "USD",
+  "total": 2687.49,
+  "previous_total": 2510.20,
+  "change": 177.29,
+  "change_pct": 7.06,
+  "transaction_count": 5,
+  "active_days": 4,
+  "daily_average": 89.58,
+  "top_categories": [],
+  "top_expenses": [],
+  "monthly_trend": []
+}
+```
+
+> 💡 The exact category, expense, and trend arrays depend on the data stored in the local database.
+
 ## 🐚 Interactive REPL
 Use the application through an interactive shell instead of launching a new command for every action.
 
@@ -255,59 +315,451 @@ The `src/` layout is the modern Python best practice — it prevents accidental 
 
 # 🚀 Installation
 
+Expense Tracker is designed to run locally with a standard Python installation. You do **not** need MySQL, PostgreSQL, Node.js, Docker, or a cloud account for the normal setup.
+
+The recommended setup uses a Python virtual environment so the project's dependencies stay isolated from the rest of your system.
+
 ## Prerequisites
 
-- **Python 3.10 or higher** — check with `py --version` or `python3 --version`
-- **pip** — usually bundled with Python
+Before installing, make sure you have:
 
-## Step 1 — Clone the repository
+- **Python 3.10 or newer**
+- **pip** — normally bundled with Python
+- **Git** — required when cloning the repository
+- A terminal:
+  - **PowerShell / Windows Terminal** on Windows
+  - **Terminal** on macOS / Linux
+- A modern browser if you plan to use the Flask dashboard
+
+Check your installed versions before continuing:
+
+### Windows
+
+```powershell
+py --version
+py -m pip --version
+git --version
+```
+
+### macOS / Linux
+
+```bash
+python3 --version
+python3 -m pip --version
+git --version
+```
+
+> 💡 **Python version:** Python 3.10+ is the supported baseline. The project has also been tested with newer Python versions, including Python 3.14.
+
+---
+
+## Windows — PowerShell
+
+### 1. Clone the repository
+
+Open PowerShell and choose the directory where you keep your projects:
+
+```powershell
+cd E:\GITHUB\BUILD
+git clone https://github.com/ItsWanheda/expense-tracker.git
+cd expense-tracker
+```
+
+If the repository is already cloned:
+
+```powershell
+cd E:\GITHUB\BUILD\expense-tracker
+```
+
+### 2. Create a virtual environment
+
+Create an isolated environment named `.venv`:
+
+```powershell
+py -m venv .venv
+```
+
+This creates a local Python environment inside the project directory. You only need to create it **once** unless you intentionally remove it.
+
+### 3. Activate the virtual environment
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+After activation, your prompt should look similar to:
+
+```text
+(.venv) PS E:\GITHUB\BUILD\expense-tracker>
+```
+
+If PowerShell reports that script execution is disabled, run this once for your user account:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+Then activate again:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+### 4. Confirm the environment is active
+
+```powershell
+python --version
+python -m pip --version
+```
+
+Using `python -m pip` after activation makes it clear that pip belongs to the active virtual environment.
+
+### 5. Upgrade packaging tools
+
+```powershell
+python -m pip install --upgrade pip setuptools wheel
+```
+
+Keeping pip and the build tools current can prevent installation problems when Python packages need to build wheels.
+
+### 6. Install Expense Tracker
+
+For normal runtime use:
+
+```powershell
+python -m pip install -e .
+```
+
+The `-e` flag installs the local project in **editable mode**, so source-code changes are immediately available without reinstalling the package.
+
+For development and testing:
+
+```powershell
+python -m pip install -e ".[dev]"
+```
+
+The development extra adds the project's test tooling.
+
+### 7. Alternative: install from requirements.txt
+
+If you prefer installing the dependency list directly:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+This is useful for environments where you do not want to install the package itself in editable mode.
+
+### 8. Verify the installation
+
+```powershell
+python -m expense_tracker --help
+python -m expense_tracker --version
+```
+
+You can also verify the installed command entry point:
+
+```powershell
+expense --help
+```
+
+The expected package version on the v0.5.0 development line is:
+
+```text
+0.5.0
+```
+
+### 9. Initialize the application
+
+The database is initialized automatically when the application needs it. A safe first command is:
+
+```powershell
+python -m expense_tracker categories list
+```
+
+This initializes the local database and shows the available categories.
+
+### 10. Start the web dashboard
+
+```powershell
+python -m expense_tracker.web
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5000
+```
+
+Keep the terminal window running while you use the dashboard. Press **Ctrl+C** to stop the development server.
+
+---
+
+## macOS / Linux
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/ItsWanheda/expense-tracker.git
 cd expense-tracker
 ```
 
-## Step 2 — Create a virtual environment
+### 2. Create the virtual environment
 
-**Windows (PowerShell):**
-```powershell
-py -m venv .venv
-.\.venvScripts\Activate.ps1
-```
-
-**macOS / Linux:**
 ```bash
 python3 -m venv .venv
+```
+
+### 3. Activate it
+
+```bash
 source .venv/bin/activate
 ```
 
-> 💡 **Windows tip:** If PowerShell blocks script activation, run this **once**:
-> ```powershell
-> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-> ```
+Your shell should now show `.venv` in the prompt.
 
-## Step 3 — Install dependencies
+### 4. Upgrade pip and build tools
 
-**Recommended** (editable + dev tools):
 ```bash
-pip install -e ".[dev]"
+python3 -m pip install --upgrade pip setuptools wheel
 ```
 
-**Or just runtime dependencies:**
+### 5. Install the project
+
+Normal installation:
+
 ```bash
-pip install -r requirements.txt
+python3 -m pip install -e .
 ```
 
-## Step 4 — Verify it works
+Development installation:
 
 ```bash
+python3 -m pip install -e ".[dev]"
+```
+
+Or install the dependency file directly:
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+### 6. Verify
+
+```bash
+python3 -m expense_tracker --help
+python3 -m expense_tracker --version
+expense --help
+```
+
+### 7. Initialize the database
+
+```bash
+python3 -m expense_tracker categories list
+```
+
+### 8. Start the web dashboard
+
+```bash
+python3 -m expense_tracker.web
+```
+
+Open:
+
+```text
+http://127.0.0.1:5000
+```
+
+Press **Ctrl+C** in the terminal to stop the development server.
+
+---
+
+## Verify the Installation
+
+After installation, run this small verification sequence.
+
+### Windows
+
+```powershell
+# Check Python
+py --version
+
+# Check the package
 py -m expense_tracker --version
+
+# Check CLI help
+py -m expense_tracker --help
+
+# Initialize / inspect the database
+py -m expense_tracker categories list
+
+# Run the test suite
+py -m pytest -v
 ```
 
-Expected output:
+### macOS / Linux
+
+```bash
+python3 --version
+python3 -m expense_tracker --version
+python3 -m expense_tracker --help
+python3 -m expense_tracker categories list
+python3 -m pytest -v
 ```
-0.4.0
+
+If all commands complete successfully, the application, database layer, CLI, and test environment are ready.
+
+---
+
+## First Run & Database
+
+Expense Tracker does **not** require a separate database server. It uses SQLite and automatically creates the application database when needed.
+
+### Default database location
+
+| Operating System | Database Path |
+|---|---|
+| Windows | `C:\Users\<you>\.expense_tracker\expenses.db` |
+| macOS / Linux | `~/.expense_tracker/expenses.db` |
+
+The application creates the directory if necessary and initializes the schema.
+
+### Default categories
+
+On first initialization, the application seeds the standard categories:
+
+**Food 🍔 · Transport 🚗 · Housing 🏠 · Entertainment 🎬 · Health 💊 · Shopping 🛍️ · Other 📦**
+
+You can create your own categories later.
+
+### Backing up your data
+
+Your SQLite database contains your real expense records, so back it up before manually modifying or deleting database files.
+
+The recommended application-level backup is JSON:
+
+```powershell
+py -m expense_tracker export-json -o backup.json
 ```
+
+Restore it with:
+
+```powershell
+py -m expense_tracker import-json backup.json
+```
+
+JSON backups are portable and can be used to move data between installations.
+
+> ⚠️ **Important:** Do not delete `~/.expense_tracker/expenses.db` or the Windows equivalent simply to fix an installation problem. Back up your data first.
+
+---
+
+## Optional Development Setup
+
+If you plan to modify the source code, run tests, or work on new features, install the development dependencies:
+
+```powershell
+py -m pip install -e ".[dev]"
+```
+
+Then verify the development environment:
+
+```powershell
+py -m pytest -v
+```
+
+The project uses the `src/` layout, so installing the package in editable mode is the recommended development workflow.
+
+---
+
+## Upgrading
+
+When updating an existing checkout, back up your data first:
+
+```powershell
+py -m expense_tracker export-json -o expense-backup.json
+```
+
+Then update the repository:
+
+```powershell
+git pull
+```
+
+Reinstall the editable package so dependency changes are picked up:
+
+```powershell
+py -m pip install -e .
+```
+
+For development:
+
+```powershell
+py -m pip install -e ".[dev]"
+```
+
+Finally verify:
+
+```powershell
+py -m expense_tracker --version
+py -m pytest -v
+```
+
+Do **not** remove the existing database as part of a normal upgrade. The application is designed to initialize its schema without destroying existing data.
+
+---
+
+## Deactivating the Virtual Environment
+
+When you finish working:
+
+```powershell
+deactivate
+```
+
+The same command works on macOS/Linux:
+
+```bash
+deactivate
+```
+
+You do **not** need to recreate `.venv` the next time you work on the project. Simply activate it again:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+or:
+
+```bash
+source .venv/bin/activate
+```
+
+---
+
+## Installing Without a Virtual Environment
+
+A virtual environment is strongly recommended, but it is possible to install the project directly into the current Python environment:
+
+```powershell
+py -m pip install -e .
+```
+
+This approach is convenient for a disposable machine or isolated Python installation, but it can cause dependency conflicts with other Python projects.
+
+For development machines, prefer `.venv`.
+
+---
+
+## Installation Notes
+
+- **No Node.js build step is required** for the bundled web UI.
+- **No external SQLite server is required.**
+- **No cloud account is required** for normal operation.
+- **Currency-rate resolution can contact a remote rate source** when a requested exchange rate is not already cached locally.
+- The Flask `app.run()` server is intended for local development, not direct public exposure.
+- If installation fails while downloading/building dependencies, check your Python version, pip version, network connection, and configured package index/mirror.
+- If `pip` is not recognized on Windows, use `py -m pip` instead.
 
 ---
 
@@ -570,7 +1022,6 @@ The web UI talks to a small JSON REST API. You can use it directly too:
 Example with curl:
 
 ```bash
-```bash
 # Add an expense via the API
 curl -X POST http://127.0.0.1:5000/api/expenses \
      -H "Content-Type: application/json" \
@@ -628,7 +1079,7 @@ This project follows a **layered architecture** that separates concerns cleanly:
 └─────────────────────────────────────────────────────────────┘
 
 Cross-cutting:
-  reports.py      → aggregation (used by CLI summary + web reports)
+  reports.py      → aggregation + financial intelligence (CLI + web)
   visualization.py → matplotlib charts (CLI only)
   wallets/currency  → shared wallet and exchange-rate repositories
 ```
@@ -854,7 +1305,7 @@ cd src && py expense_tracker/web.py
 
 # 🏆 Current Release Highlights
 
-The current release includes:
+The current v0.5.0 development line includes:
 
 - 👛 Multiple wallets
 - 💱 Multi-currency expenses and wallets
@@ -880,16 +1331,17 @@ Planned for future releases:
 - [x] **Per-category budgets** with progress bars ✅ (`0.2.0`)
 - [x] **Web interface** using the same repositories ✅ (`0.2.0`)
 - [x] **Interactive charts** (Chart.js in the web UI) ✅ (`0.2.0`)
-- [x]   **Responsive design** — sidebar drawer + stacked layouts +       scrollable tables ✅ ( 0.3.0)
-- [x] **Light/dark theme** with **live chart recoloring** ✅ ( 0.3.0)
-- [x] **Command palette & keyboard shortcuts** ✅ ( 0.3.0)
-- [x] **Toast with Undo action** for accidental deletes ✅ ( 0.3.0)
-- [x] **Recurring expenses** (rent, subscriptions) ✅ ( 0.4.0)
-- [x] **Advanced Charts** ✅ ( 0.4.0)
+- [x] **Responsive design** — sidebar drawer + stacked layouts + scrollable tables ✅ (`0.3.0`)
+- [x] **Light/dark theme** with **live chart recoloring** ✅ (`0.3.0`)
+- [x] **Command palette & keyboard shortcuts** ✅ (`0.3.0`)
+- [x] **Toast with Undo action** for accidental deletes ✅ (`0.3.0`)
+- [x] **Recurring expenses** (rent, subscriptions) ✅ (`0.4.0`)
+- [x] **Advanced Charts** ✅ (`0.4.0`)
 - [x] **Multi-currency** support with cached/live conversion rates ✅ (`0.4.0`)
 - [x] **Interactive REPL mode** (`expense shell`) ✅ (`0.4.0`)
 - [x] **JSON import / export** ✅ (`0.4.0`)
 - [x] **Multiple Wallets** with wallet-level currencies and expense assignment ✅ (`0.4.0`)
+- [x] **Financial Intelligence** with trends, comparisons, daily metrics, and top-spending analysis 🧠 (`0.5.0`)
 - [ ] **Telegram / Discord bot** integration
 - [ ] **GitHub Actions CI** (run tests on every push)
 - [ ] **Publish to PyPI** (`pip install expense-tracker`)
