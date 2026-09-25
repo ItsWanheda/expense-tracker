@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-09-25 🧠
+
+**Financial Intelligence.** The first v0.5.0 analytics layer adds deeper spending insight without replacing the established v0.4.0 reporting system.
+
+### ✨ Added
+
+- **12-month spending trends** for the selected month.
+- **Month-over-month comparison** with absolute and percentage change.
+- **Daily spending averages** and active spending-day counts.
+- **Top 5 spending categories** with totals and transaction counts.
+- **Top 5 individual expenses** for quick high-impact transaction review.
+- **Currency-aware analytics** using the existing conversion layer.
+- **Optional wallet filtering** for focused analysis.
+- **Financial intelligence API** at `/api/reports/intelligence`.
+- **Dashboard intelligence metrics** for daily average, transaction count, and monthly change.
+- **Regression coverage** for the new reporting layer.
+
+### 🔒 Compatibility
+
+- Existing monthly summary behavior remains unchanged.
+- Existing budgets, recurring expenses, wallets, currencies, exports, CLI commands, and web views remain available.
+- The new dashboard metrics degrade gracefully when the intelligence endpoint is unavailable.
+
+### 📚 Documentation
+
+- Updated the roadmap for the v0.5.0 Financial Intelligence milestone.
+- Documented the new analytics API and dashboard metrics.
+
+---
+
 ## [0.4.0] - Unreleased 🚧
 
 **Recurring expenses, advanced charts, deeper analytics, and improved financial
@@ -439,6 +469,8 @@ existing SQLite implementation.
 ---
 
 ## [Unreleased]
+
+Future v0.5.x work will build on the Financial Intelligence foundation with deeper planning, automation, and analytics.
 
 ### 🔮 Planned
 
