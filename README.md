@@ -360,7 +360,6 @@ git --version
 Open PowerShell and choose the directory where you keep your projects:
 
 ```powershell
-cd E:\GITHUB\BUILD
 git clone https://github.com/ItsWanheda/expense-tracker.git
 cd expense-tracker
 ```
@@ -368,7 +367,7 @@ cd expense-tracker
 If the repository is already cloned:
 
 ```powershell
-cd E:\GITHUB\BUILD\expense-tracker
+cd expense-tracker
 ```
 
 ### 2. Create a virtual environment
@@ -390,7 +389,7 @@ This creates a local Python environment inside the project directory. You only n
 After activation, your prompt should look similar to:
 
 ```text
-(.venv) PS E:\GITHUB\BUILD\expense-tracker>
+(.venv) PS expense-tracker>
 ```
 
 If PowerShell reports that script execution is disabled, run this once for your user account:
