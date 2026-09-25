@@ -18,7 +18,11 @@ from .models import (
     RecurringExpenseRepository,
     WalletRepository,
 )
-from .reports import current_month, generate_monthly_report
+from .reports import (
+    current_month,
+    generate_financial_intelligence,
+    generate_monthly_report,
+)
 
 
 def create_app() -> Flask:
@@ -745,6 +749,37 @@ def create_app() -> Flask:
                 for c in report.by_category
             ],
         })
+
+    # ========================================================================
+    # FINANCIAL INTELLIGENCE (v0.5.0)
+    # ========================================================================
+
+    @app.get("/api/reports/intelligence")
+    def report_intelligence():
+        month = (
+            request.args.get("month")
+            or current_month()
+        )
+        currency = (
+            request.args.get("currency")
+            or "USD"
+        ).upper()
+
+        try:
+            wallet_raw = request.args.get("wallet_id")
+            wallet_id = int(wallet_raw) if wallet_raw else None
+
+            return jsonify(
+                generate_financial_intelligence(
+                    month=month,
+                    wallet_id=wallet_id,
+                    currency=currency,
+                )
+            )
+        except (ValueError, TypeError) as exc:
+            return jsonify({
+                "error": str(exc)
+            }), 400
 
     # ========================================================================
     # HEATMAP
