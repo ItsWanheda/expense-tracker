@@ -1,0 +1,23 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 26.10.1
+    hooks:
+      - id: black
+        args: [--line-length=88]
+        files: ^(src/expense_tracker/(analytics|localization|notifications|tags)\.py|tests/test_(advanced_analytics|localization|notifications|tags|web_api)\.py)$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.3
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^(src/expense_tracker/(analytics|localization|notifications|tags)\.py|tests/test_(advanced_analytics|localization|notifications|tags|web_api)\.py)$
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy · new typed feature modules
+        entry: mypy --follow-imports=skip --config-file=pyproject.toml src/expense_tracker/analytics.py src/expense_tracker/localization.py src/expense_tracker/notifications.py src/expense_tracker/tags.py
+        language: system
+        pass_filenames: false
+        always_run: true

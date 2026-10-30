@@ -9,6 +9,10 @@ from datetime import date as date_cls
 from flask import Flask, Response, jsonify, render_template, request
 
 from .database import initialize_database
+from .analytics import generate_advanced_analytics
+from .localization import locale_options, normalize_locale
+from .notifications import NotificationRepository
+from .tags import TagRepository
 from .models import (
     BudgetRepository,
     CategoryRepository,
@@ -33,6 +37,40 @@ def create_app() -> Flask:
     )
 
     initialize_database()
+
+    def record_budget_notifications(expense_date: str) -> None:
+        # Monthly budgets are stored in the application's default reporting currency.
+        month = expense_date[:7]
+        report = generate_monthly_report(month)
+        if report.budget is None or report.budget <= 0:
+            return
+
+        percent = report.total / report.budget * 100.0
+        scope = "all"
+        metadata = {
+            "month": month,
+            "wallet_id": None,
+            "spent": report.total,
+            "budget": report.budget,
+            "percent": round(percent, 1),
+        }
+
+        if percent >= 80:
+            NotificationRepository.create(
+                "budget_warning",
+                "Budget warning",
+                f"You have used {percent:.1f}% of your monthly budget.",
+                {**metadata, "threshold": 80},
+                f"budget:{month}:{scope}:80",
+            )
+        if percent >= 100:
+            NotificationRepository.create(
+                "budget_exceeded",
+                "Monthly budget exceeded",
+                f"Your spending is {percent:.1f}% of the monthly budget.",
+                {**metadata, "threshold": 100},
+                f"budget:{month}:{scope}:100",
+            )
 
     # ========================================================================
     # FRONTEND
@@ -539,6 +577,52 @@ def create_app() -> Flask:
             }), 400
 
     # ========================================================================
+    # TAGS
+    # ========================================================================
+
+    @app.get("/api/tags")
+    def list_tags():
+        return jsonify(TagRepository.list_all())
+
+    @app.post("/api/tags")
+    def create_tag():
+        data = request.get_json(silent=True) or {}
+        name = str(data.get("name") or "").strip()
+        color = str(data.get("color") or "#64748b")
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+        try:
+            tag_id = TagRepository.create(name, color)
+            return jsonify({
+                "id": tag_id,
+                "name": name,
+                "color": color,
+            }), 201
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 400
+
+    @app.put("/api/tags/<int:tag_id>")
+    def update_tag(tag_id: int):
+        data = request.get_json(silent=True) or {}
+        try:
+            updated = TagRepository.update(
+                tag_id,
+                name=str(data["name"]).strip() if "name" in data else None,
+                color=str(data["color"]) if "color" in data else None,
+            )
+            if not updated:
+                return jsonify({"error": "Tag not found or no changes supplied"}), 404
+            return jsonify({"ok": True, "id": tag_id})
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 400
+
+    @app.delete("/api/tags/<int:tag_id>")
+    def delete_tag(tag_id: int):
+        if not TagRepository.delete(tag_id):
+            return jsonify({"error": "Tag not found"}), 404
+        return jsonify({"ok": True})
+
+    # ========================================================================
     # EXPENSES
     # ========================================================================
 
@@ -557,6 +641,7 @@ def create_app() -> Flask:
                 default=500,
                 type=int,
             ),
+            tag_id=request.args.get("tag_id", type=int),
         )
 
         return jsonify([
@@ -616,9 +701,12 @@ def create_app() -> Flask:
                 currency=currency,
             )
 
-            eid = ExpenseRepository.create(
-                expense
-            )
+            tag_ids = data.get("tag_ids", [])
+            if not isinstance(tag_ids, list):
+                raise ValueError("tag_ids must be an array")
+
+            eid = ExpenseRepository.create(expense, tag_ids=tag_ids)
+            record_budget_notifications(exp_date)
 
             return jsonify({
                 "id": eid
@@ -681,6 +769,11 @@ def create_app() -> Flask:
                 data["currency"]
             ).strip().upper()
 
+        if "tag_ids" in data:
+            if not isinstance(data["tag_ids"], list):
+                return jsonify({"error": "tag_ids must be an array"}), 400
+            updates["tag_ids"] = data["tag_ids"]
+
         if not updates:
             return jsonify({
                 "error": "Nothing to update"
@@ -697,6 +790,9 @@ def create_app() -> Flask:
                     "error": "Expense not found"
                 }), 404
 
+            current = ExpenseRepository.get(eid)
+            if current:
+                record_budget_notifications(current.date)
             return jsonify({
                 "ok": True
             })
@@ -716,6 +812,58 @@ def create_app() -> Flask:
         return jsonify({
             "ok": True
         })
+
+    # ========================================================================
+    # LOCALIZATION
+    # ========================================================================
+
+    @app.get("/api/locales")
+    def get_locales():
+        selected = normalize_locale(request.args.get("locale"))
+        return jsonify({
+            "default": "en",
+            "selected": selected,
+            "locales": locale_options(),
+        })
+
+    # ========================================================================
+    # NOTIFICATIONS
+    # ========================================================================
+
+    @app.get("/api/notifications")
+    def list_notifications():
+        unread_only = request.args.get(
+            "unread_only", "false"
+        ).lower() in {"1", "true", "yes"}
+        return jsonify({
+            "items": NotificationRepository.list(
+                limit=request.args.get("limit", default=30, type=int),
+                unread_only=unread_only,
+            ),
+            "unread_count": NotificationRepository.unread_count(),
+        })
+
+    @app.post("/api/notifications/read-all")
+    def mark_all_notifications_read():
+        return jsonify({
+            "updated": NotificationRepository.mark_all_read(),
+            "unread_count": NotificationRepository.unread_count(),
+        })
+
+    @app.patch("/api/notifications/<int:notification_id>/read")
+    def mark_notification_read(notification_id: int):
+        if not NotificationRepository.mark_read(notification_id):
+            return jsonify({"error": "Notification not found"}), 404
+        return jsonify({
+            "ok": True,
+            "unread_count": NotificationRepository.unread_count(),
+        })
+
+    @app.delete("/api/notifications/<int:notification_id>")
+    def delete_notification(notification_id: int):
+        if not NotificationRepository.delete(notification_id):
+            return jsonify({"error": "Notification not found"}), 404
+        return jsonify({"ok": True})
 
     # ========================================================================
     # REPORTS
@@ -780,6 +928,23 @@ def create_app() -> Flask:
             return jsonify({
                 "error": str(exc)
             }), 400
+
+    @app.get("/api/reports/advanced-analytics")
+    def report_advanced_analytics():
+        month = request.args.get("month") or current_month()
+        currency = (request.args.get("currency") or "USD").upper()
+        wallet_raw = request.args.get("wallet_id")
+        try:
+            wallet_id = int(wallet_raw) if wallet_raw else None
+            return jsonify(
+                generate_advanced_analytics(
+                    month=month,
+                    wallet_id=wallet_id,
+                    currency=currency,
+                )
+            )
+        except (ValueError, TypeError) as exc:
+            return jsonify({"error": str(exc)}), 400
 
     # ========================================================================
     # HEATMAP
@@ -849,6 +1014,8 @@ def create_app() -> Flask:
                 month,
                 amount,
             )
+            if amount > 0:
+                record_budget_notifications(f"{month}-01")
 
             return jsonify({
                 "ok": True,
@@ -1083,9 +1250,14 @@ def create_app() -> Flask:
 
     @app.post("/api/recurring/generate")
     def generate_recurring():
-        generated = (
-            RecurringExpenseRepository.generate_due()
-        )
+        generated = RecurringExpenseRepository.generate_due()
+        if generated:
+            NotificationRepository.create(
+                "recurring_generated",
+                "Recurring expenses added",
+                f"{generated} recurring expense(s) were added to your transactions.",
+                {"generated": generated},
+            )
 
         return jsonify({
             "ok": True,

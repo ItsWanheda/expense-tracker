@@ -1,3 +1,3 @@
-"""Expense Tracker - a simple CLI to manage personal expenses."""
+"""Expense Tracker - offline-first personal expense management."""
 
-__version__ = "0.4.0"
+__version__ = "0.6.0"

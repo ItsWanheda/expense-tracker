@@ -8,7 +8,7 @@ Built to be simple enough for the terminal while providing a full web interface 
 
 Track your spending from the **terminal** or through a **beautiful responsive web dashboard**.
 
-> 🚀 **Current release line: v0.5.0 — Financial Intelligence**. The project extends the v0.4.x feature set with analytics, trends, comparisons, and dashboard intelligence while preserving the existing CLI, web, wallet, currency, budget, recurring-expense, and import/export workflows.
+🚀 **Current development line: v0.6.0 — Quality, tags, notifications, localization & advanced analytics.** This work extends the v0.5.0 Financial Intelligence foundation while preserving existing CLI, web, wallet, currency, budget, recurring-expense, and import/export workflows. The v0.6.0 changes are under development and are not yet a published PyPI release.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask)
@@ -131,7 +131,7 @@ Per-category budgets
 ## CLI
 - 🎨 **Beautiful terminal UI** powered by Rich
 - 📈 **Visualize** spending as a horizontal bar chart (PNG via matplotlib)
-- 🧪 **Fully tested** with pytest (6 tests, all passing)
+- 🧪 **Tested** with pytest, including repository, API, analytics, and feature regression coverage
 
 ## 🌐 Web Interface
 - 🖥️ **Single-page application** — Dashboard, Expenses, Categories, Reports, Budget
@@ -223,6 +223,54 @@ The endpoint is intentionally additive: the existing monthly summary API remains
 
 > 💡 The exact category, expense, and trend arrays depend on the data stored in the local database.
 
+## 🏷️ Tags
+
+Organize expenses with reusable labels. An expense can have multiple tags, and a single tag can be shared by many expenses.
+- Create, rename, recolor, and delete tags in the web dashboard
+- Assign multiple tags when creating or editing an expense
+- Filter the expense API by a tag ID
+- SQLite many-to-many relationships preserve data integrity when expenses or tags are deleted
+
+## 🔔 Local Notifications
+
+Notifications are stored in the local SQLite database and shown in the dashboard.
+- Monthly budget warnings at 80% and 100% utilization
+- A notice when due recurring expenses are generated
+- Unread counts, mark-as-read, mark-all-as-read, and dismiss actions
+- Deduplication keys prevent repeated threshold notices for the same month
+
+## 🌐 Localization
+
+The web interface includes English and Persian (فارسی) locale options.
+- Language selection is saved in browser local storage
+- Persian switches the document to right-to-left direction
+- A shared translation catalog is used by the UI and API locale metadata
+- Missing translations fall back to English; English remains the default
+
+## 📉 Advanced Analytics — v0.6.0
+
+The advanced analytics endpoint and dashboard add complementary metrics to the existing Financial Intelligence feature.
+- Average and median transaction size
+- Largest expense and projected month-end spending
+- Budget utilization and remaining budget (for overall-budget reporting)
+- Daily and weekday spending distributions
+- Category, wallet, and tag breakdowns
+- Currency-aware totals and optional wallet filtering
+
+API example:
+
+```text
+GET /api/reports/advanced-analytics?month=2026-10&currency=USD
+```
+
+## 🧰 Developer Quality Gates
+
+- GitHub Actions runs tests and package compilation on pushes and pull requests
+- CI covers Python 3.10 through 3.14
+- Pre-commit provides Black formatting, Ruff linting, and Mypy type checking
+- The initial Black/Ruff scope is limited to the new modules and tests; Mypy checks the new typed feature modules while the legacy codebase can be migrated incrementally
+- Install the development extras with `py -m pip install -e ".[dev]"`, then enable hooks with `pre-commit install`
+
 ## 🐚 Interactive REPL
 Use the application through an interactive shell instead of launching a new command for every action.
 
@@ -268,6 +316,8 @@ JSON is useful for backups, migrations, testing, and moving data between install
 | Database         | SQLite (Python stdlib)                                |
 | Charts (CLI)     | [Matplotlib](https://matplotlib.org/) 3.x             |
 | Testing          | [pytest](https://docs.pytest.org/) 7.x                |
+| Code quality     | Black · Ruff · Mypy · pre-commit                      |
+| CI               | GitHub Actions (Python 3.10–3.14)                     |
 | Packaging        | `pyproject.toml` (PEP 621, modern standard)           |
 
 > 💡 **Zero runtime dependencies** outside the standard library except for Click, Rich, Matplotlib, and Flask — all installable with one command.
@@ -281,6 +331,8 @@ expense-tracker/
 │
 ├── pyproject.toml            # Project metadata & dependencies (PEP 621)
 ├── requirements.txt          # Pip-installable dependencies
+├── .pre-commit-config.yaml   # Black, Ruff and Mypy hooks
+├── .github/workflows/ci.yml  # Test and quality CI
 ├── README.md                 # You are here
 ├── CHANGELOG.md              # Release history
 ├── .gitignore                # Ignore __pycache__, *.db, etc.
@@ -292,21 +344,32 @@ expense-tracker/
 │       ├── cli.py            # All Click commands
 │       ├── database.py       # SQLite setup, schema, connection
 │       ├── models.py         # Dataclasses + repository classes
+│       ├── tags.py           # Many-to-many expense tags
+│       ├── notifications.py  # Local notification repository
+│       ├── localization.py   # English/Persian translation catalog
+│       ├── analytics.py      # Advanced spending analytics
 │       ├── reports.py        # Monthly aggregation logic
 │       ├── visualization.py  # Matplotlib charts
-│       ├── web.py            # 🆕 Flask app + JSON REST API
+│       ├── web.py            # Flask app + JSON REST API
 │       │
 │       ├── templates/        # 🆕
 │       │   └── index.html    #    Single-page app shell
 │       │
 │       └── static/           # 🆕
 │           ├── css/style.css #    Design system
-│           └── js/app.js     #    SPA logic (routing, CRUD, charts)
+│           ├── js/app.js     #    SPA logic (routing, CRUD, charts)
+│           ├── js/i18n.js    #    Locale switcher and translations
+│           └── js/features.js #   Tags and analytics views
 │
 └── tests/
-    ├── conftest.py           # Shared pytest fixtures (in-memory DB)
+    ├── conftest.py           # Shared pytest fixtures (temporary SQLite DB)
     ├── test_models.py        # Repository unit tests
-    └── test_reports.py       # Report generation tests
+    ├── test_reports.py       # Report generation tests
+    ├── test_tags.py          # Many-to-many tag tests
+    ├── test_notifications.py # Notification state/deduplication tests
+    ├── test_localization.py  # Locale fallback tests
+    ├── test_advanced_analytics.py # Analytics metrics tests
+    └── test_web_api.py       # New API route tests
 ```
 
 The `src/` layout is the modern Python best practice — it prevents accidental imports from the working directory and forces proper packaging.
@@ -661,13 +724,15 @@ If you plan to modify the source code, run tests, or work on new features, insta
 py -m pip install -e ".[dev]"
 ```
 
-Then verify the development environment:
+Then install the Git hooks and verify the development environment:
 
 ```powershell
+pre-commit install
 py -m pytest -v
+pre-commit run --all-files
 ```
 
-The project uses the `src/` layout, so installing the package in editable mode is the recommended development workflow.
+The project uses the `src/` layout, so installing the package in editable mode is the recommended development workflow. Black and Ruff are initially scoped to the new modules and tests; Mypy checks the new typed feature modules to avoid imposing a mass migration on legacy files.
 
 ---
 
@@ -985,6 +1050,8 @@ flask run --debug
 | 👛 **Wallets** | Create, edit, delete, and manage multiple wallets |
 | 💱 **Currencies** | View rates, enter manual rates, and convert between currencies |
 | 🔄 **Recurring** | Manage recurring expenses and generate due entries |
+| 🏷️ **Tags** | Manage reusable tags and assign multiple tags to an expense |
+| 📉 **Analytics** | Analyze averages, projections, budget usage, weekdays, tags, categories, and wallets |
 
 ## API
 
@@ -996,12 +1063,22 @@ The web UI talks to a small JSON REST API. You can use it directly too:
 | `GET` | `/api/categories` | List categories |
 | `POST` | `/api/categories` | Create category |
 | `DELETE` | `/api/categories/<id>` | Delete category |
-| `GET` | `/api/expenses` | List expenses (filters: `from`, `to`, `category_id`, `limit`) |
+| `GET` | `/api/expenses` | List expenses (filters: `from`, `to`, `category_id`, `tag_id`, `limit`) |
 | `POST` | `/api/expenses` | Create expense |
 | `PUT` | `/api/expenses/<id>` | Update expense (partial) |
 | `DELETE` | `/api/expenses/<id>` | Delete expense |
 | `GET` | `/api/reports/summary?month=YYYY-MM` | Monthly report (incl. `category_budgets`) |
 | `GET` | `/api/reports/intelligence?month=YYYY-MM&currency=USD` | Financial intelligence analytics |
+| `GET` | `/api/reports/advanced-analytics?month=YYYY-MM&currency=USD` | Averages, median, projection, weekday, wallet, category and tag analytics |
+| `GET` | `/api/tags` | List tags |
+| `POST` | `/api/tags` | Create a tag |
+| `PUT` | `/api/tags/<id>` | Update a tag |
+| `DELETE` | `/api/tags/<id>` | Delete a tag and its expense links |
+| `GET` | `/api/notifications` | List notifications and unread count |
+| `PATCH` | `/api/notifications/<id>/read` | Mark one notification as read |
+| `POST` | `/api/notifications/read-all` | Mark all notifications as read |
+| `DELETE` | `/api/notifications/<id>` | Dismiss a notification |
+| `GET` | `/api/locales` | List supported interface languages |
 | `GET` | `/api/budget?month=…&category_id=…` | Get a single budget |
 | `GET` | `/api/budgets?month=YYYY-MM` | List all budgets for a month 🆕 |
 | `PUT` | `/api/budget` | Set/update a budget (`category_id` optional) 🆕 |
@@ -1166,15 +1243,10 @@ py -m pytest tests/test_models.py::test_update_expense -v
 
 ## Expected output
 
-```
-tests/test_models.py::test_add_and_get_expense PASSED
-tests/test_models.py::test_update_expense PASSED
-tests/test_models.py::test_delete_expense PASSED
-tests/test_models.py::test_list_with_filters PASSED
-tests/test_models.py::test_budget_set_and_get PASSED
-tests/test_reports.py::test_monthly_report PASSED
+The collected test count changes as the suite grows. A successful run ends with a summary similar to:
 
-========================== 6 passed in 0.4s ==========================
+```
+========================== N passed in X.XXs ==========================
 ```
 
 ## How tests are isolated
@@ -1342,19 +1414,19 @@ Planned for future releases:
 - [x] **Multiple Wallets** with wallet-level currencies and expense assignment ✅ (`0.4.0`)
 - [x] **Financial Intelligence** with trends, comparisons, daily metrics, and top-spending analysis 🧠 (`0.5.0`)
 - [ ] **Telegram / Discord bot** integration
-- [ ] **GitHub Actions CI** (run tests on every push)
+- [x] **GitHub Actions CI** — test matrix for Python 3.10–3.14 ✅
 - [ ] **Publish to PyPI** (`pip install expense-tracker`)
-- [ ] **Tag system** (many-to-many)
-- [ ] **Pre-commit hooks** (black, ruff, mypy)
+- [x] **Tag system** — many-to-many expense relationships, tag CRUD, and assignment ✅
+- [x] **Pre-commit hooks** — Black, Ruff, and Mypy ✅
 - [ ] **User Authentication**
 - [ ] **Cloud Sync**
-- [ ] **Notifications**
+- [x] **Notifications** — local budget and recurring-expense alerts with read state ✅
 - [ ] **AI Spending Insights**
 - [ ] **Progressive Web App (PWA)**
 - [ ] **Docker Support**
 - [ ] **PDF Report Export**
-- [ ] **Advanced Analytics**
-- [ ] **Localization & Multi-language**
+- [x] **Advanced Analytics** — averages, medians, projections, distributions, and wallet/tag/category breakdowns ✅
+- [x] **Localization & Multi-language** — English and Persian with RTL support ✅
 - [ ] **User Accounts & Profiles**
 - [ ] **Excel Export**
 - [ ] **PostgreSQL/MySQL Support**
@@ -1394,7 +1466,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 # 🙋 FAQ
 
 **Q: Is my financial data safe?**
-A: 100%. Everything is stored in a single SQLite file on your machine. There is no cloud sync, no telemetry, no analytics — nothing leaves your computer.
+A: The application stores expense data, tags, and notifications in a local SQLite database. Analytics are computed locally. There is no cloud sync or telemetry; currency-rate resolution may contact its configured external rate source when a rate is not already cached.
 
 **Q: Can I sync between machines?**
 A: Yes — just copy `~/.expense_tracker/expenses.db` between devices. You could put it in Dropbox/Syncthing/etc. for automatic syncing.

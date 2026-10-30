@@ -58,7 +58,7 @@
 
   // Currency formatting (uses Intl, defaults to USD)
   const fmtMoney = (n, opts = {}) =>
-    new Intl.NumberFormat(undefined, {
+    new Intl.NumberFormat(window.ExpenseI18n?.locale() || undefined, {
       style: 'currency', currency: opts.currency || 'USD',
       minimumFractionDigits: 2, maximumFractionDigits: 2,
     }).format(Number(n || 0));
@@ -120,6 +120,18 @@
       create: (data) => API.req('/api/categories', { method: 'POST', body: JSON.stringify(data) }),
       remove: (id) => API.req('/api/categories/' + id, { method: 'DELETE' }),
     },
+    tags: {
+      list: () => API.req('/api/tags'),
+      create: (data) => API.req('/api/tags', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id, data) => API.req('/api/tags/' + id, { method: 'PUT', body: JSON.stringify(data) }),
+      remove: (id) => API.req('/api/tags/' + id, { method: 'DELETE' }),
+    },
+    notifications: {
+      list: () => API.req('/api/notifications'),
+      read: (id) => API.req('/api/notifications/' + id + '/read', { method: 'PATCH' }),
+      readAll: () => API.req('/api/notifications/read-all', { method: 'POST' }),
+      remove: (id) => API.req('/api/notifications/' + id, { method: 'DELETE' }),
+    },
     expenses: {
       list: (params = {}) => {
         const q = new URLSearchParams(
@@ -139,6 +151,11 @@
         const params = new URLSearchParams({ month, currency });
         if (walletId != null) params.set('wallet_id', walletId);
         return API.req('/api/reports/intelligence?' + params.toString());
+      },
+      advancedAnalytics: (month, currency = 'USD', walletId = null) => {
+        const params = new URLSearchParams({ month, currency });
+        if (walletId != null) params.set('wallet_id', walletId);
+        return API.req('/api/reports/advanced-analytics?' + params.toString());
       },
     },
     budget: {
@@ -362,6 +379,9 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(form).entries());
+      form.querySelectorAll('select[multiple]').forEach((select) => {
+        data[select.name] = Array.from(select.selectedOptions, (option) => option.value);
+      });
       try { await onSubmit(data); close(); }
       catch (err) { toast(err.message || String(err), 'error'); }
     });
@@ -382,11 +402,16 @@
     'budget',
     'recurring',
     'charts',
-    'wallets'
+    'wallets',
+    'tags',
+    'analytics'
   ];
   const state = {
     categories: [],
     wallets: [],
+    tags: [],
+    notifications: [],
+    unreadNotifications: 0,
     selectedWallet: null,
     selectedCurrency: 'USD',
     selectedMonth: curMonth(),
@@ -405,7 +430,8 @@
       if (lnk) lnk.classList.toggle('active', v === view);
     });
     const titleEl = $('#page-title');
-    if (titleEl) titleEl.textContent = view.charAt(0).toUpperCase() + view.slice(1);
+    const titleKey = view === 'charts' ? 'advanced_charts' : view === 'wallets' ? 'wallets_currency' : view;
+    if (titleEl) titleEl.textContent = window.ExpenseI18n?.t(titleKey) || (view.charAt(0).toUpperCase() + view.slice(1));
 
     Object.keys(chartInstances).forEach((id) => {
       if (!document.getElementById(id)) {
@@ -448,7 +474,7 @@
           <thead>
             <tr>
               <th>Date</th><th>Category</th><th>Description</th>
-              <th class="numeric">Amount</th><th></th>
+              <th>Tags</th><th class="numeric">Amount</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -459,6 +485,7 @@
         ? `<span class="category-pill"><span class="category-dot" style="background:${escHTML(e.category_color || 'var(--primary)')}"></span>${escHTML(e.category_name)}</span>`
         : '<span class="muted">—</span>'}</td>
                 <td>${escHTML(e.description)}</td>
+                <td><div class="expense-tag-list">${(e.tags || []).map((tag) => `<span class="tag-chip" style="--tag-color:${escHTML(tag.color || '#64748b')}">${escHTML(tag.name)}</span>`).join('') || '<span class="muted">—</span>'}</div></td>
                 <td class="numeric"><strong>${fmtMoney(e.amount)}</strong></td>
                 <td><div class="row-actions">
                   ${onEdit ? '<button class="btn btn-sm act-edit">Edit</button>' : ''}
@@ -518,10 +545,17 @@
       ).join('')}
             </select>
           </div>
+          <div class="form-row">
+            <label>${window.ExpenseI18n?.t('select_tags') || 'Tags (optional)'}</label>
+            <select name="tag_ids" multiple size="3">
+              ${(state.tags || []).map((tag) => `<option value="${tag.id}" ${(expense?.tags || []).some((item) => item.id == tag.id) ? 'selected' : ''}>${escHTML(tag.name)}</option>`).join('')}
+            </select>
+          </div>
         </div>`,
       onSubmit: async (data) => {
         if (isEdit) { await API.expenses.update(expense.id, data); toast('Expense updated', 'success'); }
         else { await API.expenses.create(data); toast('Expense added', 'success'); }
+        await refreshNotifications();
         trackRecentCategory(parseInt(data.category_id) || null);
         onSaved?.();
       },
@@ -540,6 +574,121 @@
     try { state.categories = await API.categories.list(); }
     catch (err) { console.error('[refreshCategories]', err); state.categories = []; }
   }
+
+  async function refreshTags() {
+    try { state.tags = await API.tags.list(); }
+    catch (err) { console.error('[refreshTags]', err); state.tags = []; }
+  }
+
+  function renderNotificationPanel() {
+    const panel = $('#notification-panel');
+    if (!panel) return;
+    panel.replaceChildren();
+
+    const header = document.createElement('div');
+    header.className = 'notification-panel-header';
+    const title = document.createElement('strong');
+    title.textContent = window.ExpenseI18n?.t('notifications') || 'Notifications';
+    const readAll = document.createElement('button');
+    readAll.className = 'btn btn-sm';
+    readAll.textContent = window.ExpenseI18n?.t('mark_all_read') || 'Mark all read';
+    readAll.disabled = !state.unreadNotifications;
+    readAll.addEventListener('click', async () => {
+      try { await API.notifications.readAll(); await refreshNotifications(); }
+      catch (err) { toast(err.message, 'error'); }
+    });
+    header.append(title, readAll);
+    panel.appendChild(header);
+
+    if (!state.notifications.length) {
+      const empty = document.createElement('p');
+      empty.className = 'muted';
+      empty.textContent = window.ExpenseI18n?.t('no_notifications') || "You're all caught up.";
+      panel.appendChild(empty);
+      return;
+    }
+
+    state.notifications.forEach((item) => {
+      const article = document.createElement('article');
+      article.className = 'notification-item' + (item.read_at ? '' : ' unread');
+      const heading = document.createElement('strong');
+      heading.textContent = item.title;
+      const message = document.createElement('p');
+      message.textContent = item.message;
+      const time = document.createElement('time');
+      time.textContent = item.created_at || '';
+      const actions = document.createElement('div');
+      actions.className = 'row-actions';
+
+      if (!item.read_at) {
+        const markRead = document.createElement('button');
+        markRead.className = 'btn btn-sm';
+        markRead.textContent = '✓';
+        markRead.addEventListener('click', async () => {
+          try { await API.notifications.read(item.id); await refreshNotifications(); }
+          catch (err) { toast(err.message, 'error'); }
+        });
+        actions.appendChild(markRead);
+      }
+
+      const remove = document.createElement('button');
+      remove.className = 'btn btn-sm btn-danger';
+      remove.textContent = window.ExpenseI18n?.t('delete') || 'Delete';
+      remove.addEventListener('click', async () => {
+        try { await API.notifications.remove(item.id); await refreshNotifications(); }
+        catch (err) { toast(err.message, 'error'); }
+      });
+      actions.appendChild(remove);
+      article.append(heading, message, time, actions);
+      panel.appendChild(article);
+    });
+  }
+
+  async function refreshNotifications() {
+    try {
+      const result = await API.notifications.list();
+      state.notifications = result.items || [];
+      state.unreadNotifications = Number(result.unread_count || 0);
+      const badge = $('#notification-count');
+      if (badge) {
+        badge.textContent = state.unreadNotifications > 99 ? '99+' : String(state.unreadNotifications);
+        badge.hidden = state.unreadNotifications === 0;
+      }
+      const panel = $('#notification-panel');
+      if (panel && !panel.hidden) renderNotificationPanel();
+    } catch (err) {
+      console.error('[refreshNotifications]', err);
+    }
+  }
+
+  safeOn($('#notification-toggle'), 'click', async () => {
+    const panel = $('#notification-panel');
+    if (!panel) return;
+    panel.hidden = !panel.hidden;
+    $('#notification-toggle')?.setAttribute('aria-expanded', String(!panel.hidden));
+    if (!panel.hidden) {
+      await refreshNotifications();
+      renderNotificationPanel();
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    const panel = $('#notification-panel');
+    if (panel && !event.target.closest('.notification-wrap')) {
+      panel.hidden = true;
+      $('#notification-toggle')?.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  safeOn($('#language-select'), 'change', (event) => {
+    window.ExpenseI18n?.setLocale(event.target.value);
+  });
+
+  window.addEventListener('expense-tracker-locale-change', () => {
+    if (state.notifications) renderNotificationPanel();
+    const renderer = renderers[currentView];
+    if (renderer) renderer();
+  });
 
   // Track most-used categories for quick add
   function trackRecentCategory(id) {
@@ -2299,6 +2448,8 @@
       { label: 'Export CSV', icon: '⬇️', shortcut: '', action: () => { window.location.href = '/api/export.csv'; } },
       { label: 'Export chart (PNG)', icon: '📷', shortcut: '', action: () => { $('#export-png')?.click(); } },
       { label: 'Wallets & Currency', icon: '💼', shortcut: 'G W', action: () => navigate('wallets') },
+      { label: 'Tags', icon: '🏷️', shortcut: 'G T', action: () => navigate('tags') },
+      { label: 'Analytics', icon: '📉', shortcut: 'G I', action: () => navigate('analytics') },
       { label: 'Export JSON', icon: '🧩', shortcut: '', action: () => { window.location.href = '/api/export.json'; } },
       { label: 'Toggle dark mode', icon: '🌙', shortcut: '', action: () => $('#theme-toggle')?.click() },
       { label: 'Keyboard shortcuts', icon: '⌨️', shortcut: '?', action: () => openShortcutHelp() },
@@ -2414,7 +2565,9 @@
           b: 'budget',
           x: 'recurring',
           a: 'charts',
-          w: 'wallets'
+          w: 'wallets',
+          t: 'tags',
+          i: 'analytics'
         };
         const v = map[e.key.toLowerCase()];
         if (v) navigate(v);
@@ -2498,8 +2651,12 @@
   // -----------------------------------------------------------------------
   applyChartDefaults();
   refreshWallets()
-    .then(() => refreshCategories())
-    .catch((err) => console.error('[boot] refreshCategories', err))
+    .then(async () => {
+      await refreshCategories();
+      await refreshTags();
+      await refreshNotifications();
+    })
+    .catch((err) => console.error('[boot] initial data refresh', err))
     .finally(() => {
       try { navigate(location.hash.slice(1) || 'dashboard'); }
       catch (err) { console.error('[boot] navigate', err); showFatal(`Boot error: ${err.message}`); }
@@ -2507,8 +2664,9 @@
 
   // Expose for debugging
   window.__app = {
-    state, navigate, renderers, refreshCategories,
-    chartInstances, applyChartDefaults, updateChartsTheme,
+    state, navigate, renderers, API,
+    refreshCategories, refreshTags, refreshNotifications,
+    chartInstances, createChart, applyChartDefaults, updateChartsTheme,
     animateCount,
   };
 })();

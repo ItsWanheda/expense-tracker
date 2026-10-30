@@ -36,29 +36,35 @@
       </div>
       <nav class="nav">
         <a href="#dashboard" class="nav-link active" data-view="dashboard">
-          <span class="nav-icon">📊</span><span>Dashboard</span>
+          <span class="nav-icon">📊</span><span data-i18n="dashboard">Dashboard</span>
         </a>
         <a href="#expenses" class="nav-link" data-view="expenses">
-          <span class="nav-icon">📋</span><span>Expenses</span>
+          <span class="nav-icon">📋</span><span data-i18n="expenses">Expenses</span>
           <span class="nav-badge" id="badge-expenses" hidden></span>
         </a>
         <a href="#categories" class="nav-link" data-view="categories">
-          <span class="nav-icon">🏷️</span><span>Categories</span>
+          <span class="nav-icon">🏷️</span><span data-i18n="categories">Categories</span>
         </a>
         <a href="#reports" class="nav-link" data-view="reports">
-          <span class="nav-icon">📈</span><span>Reports</span>
+          <span class="nav-icon">📈</span><span data-i18n="reports">Reports</span>
         </a>
         <a href="#budget" class="nav-link" data-view="budget">
-          <span class="nav-icon">🎯</span><span>Budget</span>
+          <span class="nav-icon">🎯</span><span data-i18n="budget">Budget</span>
         </a>
         <a href="#recurring" class="nav-link" data-view="recurring">
-          <span class="nav-icon">🔄</span><span>Recurring</span>
+          <span class="nav-icon">🔄</span><span data-i18n="recurring">Recurring</span>
         </a>
         <a href="#charts" class="nav-link" data-view="charts">
-          <span class="nav-icon">📊</span><span>Advanced Charts</span>
+          <span class="nav-icon">📊</span><span data-i18n="advanced_charts">Advanced Charts</span>
         </a>
         <a href="#wallets" class="nav-link" data-view="wallets">
-          <span class="nav-icon">💼</span><span>Wallets & Currency</span>
+          <span class="nav-icon">💼</span><span data-i18n="wallets_currency">Wallets & Currency</span>
+        </a>
+        <a href="#tags" class="nav-link" data-view="tags">
+          <span class="nav-icon">🏷️</span><span data-i18n="tags">Tags</span>
+        </a>
+        <a href="#analytics" class="nav-link" data-view="analytics">
+          <span class="nav-icon">📉</span><span data-i18n="analytics">Analytics</span>
         </a>
       </nav>
 
@@ -84,6 +90,17 @@
           <p class="greeting" id="greeting"></p>
         </div>
         <span id="today-date" class="muted"></span>
+        <label class="sr-only" for="language-select" data-i18n="language">Language</label>
+        <select id="language-select" class="language-select" aria-label="Language">
+          <option value="en">EN</option>
+          <option value="fa">فارسی</option>
+        </select>
+        <div class="notification-wrap">
+          <button class="icon-btn notification-toggle" id="notification-toggle" aria-label="Notifications" aria-expanded="false">
+            🔔 <span id="notification-count" class="notification-count" hidden>0</span>
+          </button>
+          <div id="notification-panel" class="notification-panel" hidden></div>
+        </div>
         <button class="icon-btn" id="shortcut-btn" title="Keyboard shortcuts (?)">⌨️</button>
       </header>
 
@@ -95,6 +112,8 @@
       <section id="view-recurring" class="view"></section>
       <section id="view-charts" class="view"></section>
       <section id="view-wallets" class="view"></section>
+      <section id="view-tags" class="view"></section>
+      <section id="view-analytics" class="view"></section>
     </main>
   </div>
 
@@ -109,7 +128,9 @@
     </button>
   </div>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/features.js') }}"></script>
 </body>
 
 </html>

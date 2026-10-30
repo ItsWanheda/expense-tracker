@@ -5,7 +5,7 @@ from __future__ import annotations
 import calendar
 import sqlite3
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import date as date_cls
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -15,6 +15,7 @@ import urllib.parse
 import urllib.request
 
 from .database import get_connection
+from .tags import TagRepository
 
 # ============================================================================
 # EXPENSE MODEL
@@ -35,6 +36,7 @@ class Expense:
     id: Optional[int] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+    tags: list[dict[str, int | str]] = field(default_factory=list)
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> "Expense":
@@ -225,7 +227,10 @@ class ExpenseRepository:
     # ------------------------------------------------------------------------
 
     @staticmethod
-    def create(expense: Expense) -> int:
+    def create(
+        expense: Expense,
+        tag_ids: list[int] | None = None,
+    ) -> int:
 
         with get_connection() as conn:
 
@@ -245,7 +250,10 @@ class ExpenseRepository:
                 ),
             )
 
-            return cur.lastrowid
+            expense_id = int(cur.lastrowid)
+            if tag_ids is not None:
+                TagRepository.replace_for_expense(conn, expense_id, tag_ids)
+            return expense_id
 
     # ------------------------------------------------------------------------
     # GET
@@ -266,7 +274,13 @@ class ExpenseRepository:
                 (expense_id,),
             ).fetchone()
 
-            return Expense.from_row(row) if row else None
+            if not row:
+                return None
+            expense = Expense.from_row(row)
+            expense.tags = TagRepository.for_expenses(conn, [expense_id]).get(
+                expense_id, []
+            )
+            return expense
 
     # ------------------------------------------------------------------------
     # UPDATE
@@ -287,30 +301,36 @@ class ExpenseRepository:
             "date",
         }
 
+        tag_ids = fields.pop("tag_ids", None)
         fields = {k: v for k, v in fields.items() if k in allowed}
 
-        if not fields:
+        if not fields and tag_ids is None:
             return False
 
+        if tag_ids is not None and not isinstance(tag_ids, list):
+            raise ValueError("tag_ids must be a list")
+
         fields["updated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-        set_clause = ", ".join(f"{k} = ?" for k in fields)
-
-        values = list(fields.values())
-        values.append(expense_id)
-
         with get_connection() as conn:
+            exists = conn.execute(
+                "SELECT 1 FROM expenses WHERE id = ?",
+                (expense_id,),
+            ).fetchone()
+            if not exists:
+                return False
 
-            cur = conn.execute(
-                f"""
-                UPDATE expenses
-                SET {set_clause}
-                WHERE id = ?
-                """,
-                values,
-            )
+            if fields:
+                set_clause = ", ".join(f"{key} = ?" for key in fields)
+                values = [*fields.values(), expense_id]
+                conn.execute(
+                    f"UPDATE expenses SET {set_clause} WHERE id = ?",
+                    values,
+                )
 
-            return cur.rowcount > 0
+            if tag_ids is not None:
+                TagRepository.replace_for_expense(conn, expense_id, tag_ids)
+
+            return True
 
     # ------------------------------------------------------------------------
     # DELETE
@@ -346,6 +366,7 @@ class ExpenseRepository:
         limit: int = 100,
         wallet_id: Optional[int] = None,
         currency: Optional[str] = None,
+        tag_id: Optional[int] = None,
     ) -> list[Expense]:
         """List expenses with optional filters."""
 
@@ -379,6 +400,16 @@ class ExpenseRepository:
             query += " AND e.currency = ?"
             params.append(currency.upper())
 
+        if tag_id is not None:
+            query += """
+                AND EXISTS (
+                    SELECT 1
+                    FROM expense_tags AS et
+                    WHERE et.expense_id = e.id AND et.tag_id = ?
+                )
+            """
+            params.append(tag_id)
+
         if q:
 
             query += """
@@ -411,7 +442,17 @@ class ExpenseRepository:
                 params,
             ).fetchall()
 
-            return [Expense.from_row(row) for row in rows]
+            expenses = [Expense.from_row(row) for row in rows]
+            expense_ids = [
+                int(expense.id)
+                for expense in expenses
+                if expense.id is not None
+            ]
+            tag_map = TagRepository.for_expenses(conn, expense_ids)
+            for expense in expenses:
+                if expense.id is not None:
+                    expense.tags = tag_map.get(expense.id, [])
+            return expenses
 
 
 # ============================================================================

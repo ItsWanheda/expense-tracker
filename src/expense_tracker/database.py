@@ -93,6 +93,31 @@ CREATE TABLE IF NOT EXISTS recurring_expenses (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    color TEXT NOT NULL DEFAULT '#64748b',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (length(trim(name)) BETWEEN 1 AND 40)
+);
+
+CREATE TABLE IF NOT EXISTS expense_tags (
+    expense_id INTEGER NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
+    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (expense_id, tag_id)
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    dedupe_key TEXT UNIQUE,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at TEXT
+);
 """
 
 DEFAULT_CATEGORIES = [
@@ -203,6 +228,9 @@ def migrate_schema(conn: sqlite3.Connection) -> None:
         ("idx_recurring_category", "recurring_expenses(category_id)"),
         ("idx_recurring_wallet", "recurring_expenses(wallet_id)"),
         ("idx_recurring_currency", "recurring_expenses(currency)"),
+        ("idx_expense_tags_tag", "expense_tags(tag_id)"),
+        ("idx_notifications_created", "notifications(created_at)"),
+        ("idx_notifications_unread", "notifications(read_at)"),
     )
 
     for name, expression in indexes:

@@ -4,17 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expense-tracker"
-version = "0.2.0"
-description = "A simple CLI to track personal expenses"
+version = "0.6.0"
+description = "An offline-first expense tracker with a Python CLI and Flask dashboard"
 requires-python = ">=3.10"
 dependencies = [
     "click>=8.1",
     "rich>=13.0",
     "matplotlib>=3.7",
+    "flask>=3.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0"]
+dev = [
+    "pytest>=7.0",
+    "black==26.10.1",
+    "ruff==0.17.3",
+    "mypy==2.4.1",
+    "pre-commit>=4.0",
+]
 
 [project.scripts]
 expense = "expense_tracker.cli:main"
@@ -25,3 +32,26 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+follow_imports = "skip"
+ignore_missing_imports = true
+files = [
+    "src/expense_tracker/analytics.py",
+    "src/expense_tracker/localization.py",
+    "src/expense_tracker/notifications.py",
+    "src/expense_tracker/tags.py",
+]

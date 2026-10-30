@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - Unreleased 🚧
+
+**Quality automation, multi-tag expenses, local notifications, English/Persian localization, and advanced analytics.**
+
+### ✨ Added
+
+- **GitHub Actions CI** runs the pytest suite and package compilation on pushes and pull requests, across Python 3.10–3.14.
+- **Pre-commit quality hooks** add Black formatting, Ruff linting, and Mypy checks. The initial formatting/lint scope targets the newly introduced modules and tests, allowing the older codebase to migrate incrementally.
+- **Many-to-many expense tags** add reusable tags, tag colors, assignment to multiple expenses, tag filtering, and cascade-safe relationship cleanup.
+- **Local notifications** add persistent unread/read state, bulk mark-as-read, dismissal, budget-threshold alerts at 80% and 100%, and recurring-expense generation notices.
+- **English and Persian locale support** adds a saved language selector, translation fallbacks, and RTL document direction for Persian.
+- **Advanced analytics** adds average/median transaction size, largest expense, month-end projection, daily and weekday distribution, budget utilization, and wallet/category/tag breakdowns.
+- **New REST endpoints** expose tags, locales, notifications, and advanced analytics.
+- **Regression tests** cover tag relationships, notification state/deduplication, locale fallback, analytics metrics, and new web API routes.
+
+### 🔒 Compatibility
+
+- New SQLite tables are created through the existing additive schema initialization; existing expenses are not rewritten.
+- Existing CLI commands and financial-intelligence/report endpoints remain available.
+- Advanced analytics reuses existing repositories and currency conversion logic.
+- Analytics does not attribute the global monthly budget to a single wallet when a wallet filter is active.
+
+### 📚 Documentation
+
+- Updated installation and development guidance for quality tools.
+- Updated the roadmap and documented the new UI/API features.
+
+---
+
 ## [0.5.0] - 2026-09-25 🧠
 
 **Financial Intelligence.** The first v0.5.0 analytics layer adds deeper spending insight without replacing the established v0.4.0 reporting system.
